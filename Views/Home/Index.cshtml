@@ -1,8 +1,39 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    Layout = "_Layout"; // Indica que usa el layout
+    ViewData["Title"] = "Panel Principal";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<h2>Panel Principal</h2>
+
+<div class="row dashboard">
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button producto w-100" asp-controller="Producto" asp-action="Index">Productos</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button cliente w-100" asp-controller="Categorium" asp-action="Index">Categorías</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button pedido w-100" asp-controller="Inventario" asp-action="Index">Inventario</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button perdidas w-100" asp-controller="Perdidum" asp-action="Index">Perdidas</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button detalle-perdidas w-100" asp-controller="DetallePerdidum" asp-action="Index">Detalle Perdidas</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button ventas w-100" asp-controller="Ventum" asp-action="Index">Ventas</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button detalle-ventas w-100" asp-controller="DetalleVentum" asp-action="Index">Detalle Ventas</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button proveedor w-100" asp-controller="Proveedor" asp-action="Index">Proveedor</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button solicitudes w-100" asp-controller="SolicitudDevolucion" asp-action="Index">Solicitud Devolución</a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a class="dashboard-button detalle-solicitud-devolucion w-100" asp-controller="DetalleSolicitudDevolucion" asp-action="Index">Detalle Solicitud Devolución</a>
+    </div>
 </div>
