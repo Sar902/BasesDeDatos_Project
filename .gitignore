@@ -1,0 +1,45 @@
+# Build Folders
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.exe
+*.dll
+*.pdb
+*.cache
+
+# Rider IDE
+.idea/
+
+# Logs
+*.log
+
+# Configuración sensible
+appsettings.Development.json
+secrets.json
+
+# Paquetes NuGet
+*.nupkg
+packages/
+
+# Respaldo
+*.bak
+*.tmp
+
+# Node.js (si tienes frontend)
+node_modules/
+
+# Archivos de publicación
+*.publish.xml
+
+# Archivos de base de datos local (si los tienes)
+*.mdf
+*.ldf
+
+# Otros archivos temporales
+*.swp
+*.DS_Store

@@ -1,0 +1,85 @@
+/* Estilo general para links */
+a {
+  color: #0077cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #005fa3;
+  text-decoration: underline;
+}
+
+/* Navbar */
+a.navbar-brand {
+  white-space: normal;
+  text-align: center;
+  word-break: break-word; /* mejor que break-all */
+}
+
+.navbar {
+  background-color: #f8f9fa;
+}
+
+/* Botones del dashboard */
+.dashboard-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  border-radius: 10px;
+  color: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%; /* aseguramos que tome todo el ancho del col */
+}
+
+/* Hover */
+.dashboard-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Colores por tipo de tabla */
+.dashboard-button.producto { background-color: #1b6ec2; }
+.dashboard-button.cliente { background-color: #28a745; }
+.dashboard-button.pedido { background-color: #ffc107; }
+.dashboard-button.perdidas { background-color: #dc3545; }
+.dashboard-button.detalle-perdidas { background-color: #6c757d; }
+.dashboard-button.ventas { background-color: #17a2b8; }
+.dashboard-button.detalle-ventas { background-color: #6610f2; }
+.dashboard-button.proveedor { background-color: #fd7e14; }
+.dashboard-button.solicitudes { background-color: #20c997; }
+.dashboard-button.detalle-solicitudes { background-color: #e83e8c; }
+
+/* Footer */
+.footer {
+  position: relative;
+  bottom: 0;
+  width: 100%;
+  line-height: 60px;
+  background-color: #f8f9fa;
+  text-align: center;
+}
+
+/* Tarjetas para el dashboard */
+.row.dashboard {
+  margin-top: 30px;
+  gap: 15px; /* espaciado uniforme entre columnas */
+}
+
+.row.dashboard .col-md-3 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Responsive: para pantallas pequeñas */
+@media (max-width: 767px) {
+  .row.dashboard .col-md-3 {
+    flex: 1 0 100%; /* cada botón ocupa toda la fila */
+  }
+}
