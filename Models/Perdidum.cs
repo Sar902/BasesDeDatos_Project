@@ -13,7 +13,6 @@ public partial class Perdidum
 
     public string? Motivo { get; set; }
 
-    public int? IdSolicitudDevolucion { get; set; }
 
     public virtual ICollection<DetallePerdidum> DetallePerdida { get; set; } = new List<DetallePerdidum>();
 }

@@ -314,7 +314,6 @@ C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\rjsmcshtml.dswa.
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\scopedcss\bundle\ProyectoSistemaInventarioNuevo.styles.css
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\scopedcss\projectbundle\ProyectoSistemaInventarioNuevo.bundle.scp.css
-C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-b9sayid5wm-b9sayid5wm.gz
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\guf07xy9ko-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\yzw6lkk2dg-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\115dx3rw19-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -389,3 +388,5 @@ C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\refint\ProyectoS
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.pdb
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.genruntimeconfig.cache
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ref\ProyectoSistemaInventarioNuevo.dll
+C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.sourcelink.json
+C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-mr6nqb54rz-mr6nqb54rz.gz

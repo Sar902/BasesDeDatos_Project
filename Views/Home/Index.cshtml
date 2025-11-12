@@ -2,53 +2,39 @@
     ViewData["Title"] = "Panel Principal";
 }
 
-<h2 class="mb-4 text-center">Panel Principal</h2>
+<div class="d-flex" id="wrapper">
 
-<div class="row text-center">
-    <div class="col-md-4 mb-3">
-        <a asp-controller="Producto" asp-action="Index" class="btn btn-primary w-100 py-4 fs-5 rounded-4">Productos</a>
-    </div>
-    <div class="col-md-4 mb-3">
-        <a asp-controller="Categoria" asp-action="Index" class="btn btn-success w-100 py-4 fs-5 rounded-4">Categorías</a>
-    </div>
-    <div class="col-md-4 mb-3">
-        <a asp-controller="Inventario" asp-action="Index" class="btn btn-warning w-100 py-4 fs-5 rounded-4 text-white">Inventario</a>
+    <!-- Sidebar -->
+    <div class="bg-light border-end" id="sidebar-wrapper">
+        <div class="sidebar-heading text-center py-4 fw-bold fs-4 border-bottom">
+            Panel Principal
+        </div>
+        <div class="list-group list-group-flush">
+            <a asp-controller="Producto" asp-action="Index" class="list-group-item list-group-item-action">Productos</a>
+            <a asp-controller="Categoria" asp-action="Index" class="list-group-item list-group-item-action">Categorías</a>
+            <a asp-controller="Inventario" asp-action="Index" class="list-group-item list-group-item-action">Inventario</a>
+            <a asp-controller="Perdida" asp-action="Index" class="list-group-item list-group-item-action">Pérdidas</a>
+            <a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item list-group-item-action">Detalle Pérdidas</a>
+            <a asp-controller="Venta" asp-action="Index" class="list-group-item list-group-item-action">Ventas</a>
+            <a asp-controller="DetalleVenta" asp-action="Index" class="list-group-item list-group-item-action">Detalle Ventas</a>
+            <a asp-controller="Proveedor" asp-action="Index" class="list-group-item list-group-item-action">Proveedores</a>
+            <a asp-controller="SolicitudDevolucion" asp-action="Index" class="list-group-item list-group-item-action">Solicitud Devolución</a>
+            <a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="list-group-item list-group-item-action">Detalle Solicitud Devolución</a>
+           <a asp-controller="VVentum" asp-action="Index" class="list-group-item list-group-item-action">Vista venta</a>
+         <a asp-controller="VDetalleVentum" asp-action="Index" class="list-group-item list-group-item-action">Vista detalle venta</a>
+         <a asp-controller="VProducto" asp-action="Index" class="list-group-item list-group-item-action">Vista producto</a>
+        <a asp-controller="VDetallePerdidum" asp-action="Index" class="list-group-item list-group-item-action">Vista detalle perdida</a>
+        
+        
+        
+        
+        
+        </div>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <a asp-controller="Perdida" asp-action="Index" class="btn btn-danger w-100 py-4 fs-5 rounded-4">Pérdidas</a>
-    </div>
-    <div class="col-md-4 mb-3">
-        <a asp-controller="DetallePerdida" asp-action="Index" class="btn btn-secondary w-100 py-4 fs-5 rounded-4">Detalle Pérdidas</a>
-    </div>
-    <div class="col-md-4 mb-3">
-        <a asp-controller="Venta" asp-action="Index" class="btn btn-info w-100 py-4 fs-5 rounded-4 text-white">Ventas</a>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <a asp-controller="DetalleVenta" asp-action="Index" class="btn btn-primary w-100 py-4 fs-5 rounded-4">Detalle Ventas</a>
-    </div>
-    <div class="col-md-4 mb-3">
-        <a asp-controller="Proveedor" asp-action="Index" class="btn btn-warning w-100 py-4 fs-5 rounded-4 text-white">Proveedor</a>
-    </div>
-    <div class="col-md-4 mb-3">
-        <a asp-controller="SolicitudDevolucion" asp-action="Index" class="btn btn-success w-100 py-4 fs-5 rounded-4">Solicitud Devolución</a>
-    </div>
-      <div class="col-md-4 mb-3">
-        <a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="btn btn-success w-100 py-4 fs-5 rounded-4">Detalle Solicitud Devolución</a>
+    <!-- Page Content -->
+    <div id="page-content-wrapper" class="p-4 flex-fill">
+        <h2 class="text-center mb-4">Bienvenido al Panel Principal</h2>
+        <p class="text-center text-muted">Selecciona una opción del menú lateral para comenzar.</p>
     </div>
 </div>
-
-<style>
-    body {
-        background-color: #f8f9fa;
-    }
-    .btn {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-</style>

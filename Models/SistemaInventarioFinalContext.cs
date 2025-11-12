@@ -187,29 +187,52 @@ modelBuilder.Entity<Ventum>(entity =>
         entity.ToTable("Proveedor");
     });
 
- modelBuilder.Entity<VDetallePerdidum>(entity =>
-    {
-        entity.HasNoKey();
-        entity.ToView("VDetallePerdidum");
-    });
+modelBuilder.Entity<VDetallePerdidum>(entity =>
+{
+    // Definir la PK ficticia
+    entity.HasKey(e => e.IdDetallePerdida);
 
-    modelBuilder.Entity<VDetalleVentum>(entity =>
-    {
-        entity.HasNoKey();
-        entity.ToView("VDetalleVentum");
-    });
+    entity.ToView("v_DetallePerdida", "dbo");
 
-    modelBuilder.Entity<VProducto>(entity =>
-    {
-        entity.HasNoKey();
-        entity.ToView("VProducto");
-    });
+    entity.Property(e => e.PrecioCompraUnitario).HasColumnType("decimal(18,4)");
+    entity.Property(e => e.SubtotalPerdida).HasColumnType("decimal(18,2)");
+});
 
-    modelBuilder.Entity<VVentum>(entity =>
-    {
-        entity.HasNoKey();
-        entity.ToView("VVenta");
-    });
+modelBuilder.Entity<VDetalleVentum>(entity =>
+{
+    // Definir la PK ficticia
+    entity.HasKey(e => e.IdDetalleVenta);
+
+    entity.ToView("v_DetalleVenta", "dbo");
+
+    entity.Property(e => e.PrecioCompraUnitario).HasColumnType("decimal(18,4)");
+    entity.Property(e => e.PrecioVentaUnitario).HasColumnType("decimal(18,4)");
+    entity.Property(e => e.Subtotal).HasColumnType("decimal(18,2)");
+    entity.Property(e => e.GananciaSubtotal).HasColumnType("decimal(18,2)");
+});
+
+modelBuilder.Entity<VProducto>(entity =>
+{
+    // Definir la PK ficticia
+    entity.HasKey(e => e.IdProducto);
+
+    entity.ToView("v_Producto", "dbo");
+
+    entity.Property(e => e.PrecioCompra).HasColumnType("decimal(18,4)");
+    entity.Property(e => e.PrecioVenta).HasColumnType("decimal(18,4)");
+});
+
+modelBuilder.Entity<VVentum>(entity =>
+{
+    // Definir la PK ficticia
+    entity.HasKey(e => e.IdVenta);
+
+    entity.ToView("v_Venta", "dbo");
+
+    entity.Property(e => e.Total).HasColumnType("decimal(18,2)");
+    entity.Property(e => e.GananciaTotal).HasColumnType("decimal(18,2)");
+});
+
 
 }
 

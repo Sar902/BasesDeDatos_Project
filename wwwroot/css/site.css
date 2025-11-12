@@ -29,3 +29,59 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+    body {
+        background-color: #f8f9fa;
+    }
+    .btn {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    /* ======== PANEL LATERAL ======== */
+#wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+#sidebar-wrapper {
+    width: 260px;
+    min-height: 100vh;
+    background-color: #ffffff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-heading {
+    background-color: #007bff;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.list-group-item {
+    border: none;
+    padding: 15px 20px;
+    font-size: 1.05rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: #007bff;
+    color: white;
+    transform: translateX(5px);
+}
+
+/* Contenido */
+#page-content-wrapper {
+    flex: 1;
+    background-color: #f8f9fa;
+}
+
+body {
+    margin: 0;
+    background-color: #f8f9fa;
+}
+

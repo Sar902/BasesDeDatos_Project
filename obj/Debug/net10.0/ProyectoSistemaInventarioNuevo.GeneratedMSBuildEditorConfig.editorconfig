@@ -226,6 +226,46 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU29saWNpdHVkRGV2b2x1Y2lvblxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetallePerdidum/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVQZXJkaWR1bVxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetallePerdidum/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVQZXJkaWR1bVxEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetallePerdidum/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVQZXJkaWR1bVxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetallePerdidum/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVQZXJkaWR1bVxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetallePerdidum/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVQZXJkaWR1bVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetalleVentum/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVWZW50dW1cQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetalleVentum/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVWZW50dW1cRGVsZXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetalleVentum/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVWZW50dW1cRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetalleVentum/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVWZW50dW1cRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VDetalleVentum/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVkRldGFsbGVWZW50dW1cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Venta/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmVudGFcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -244,6 +284,46 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Venta/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmVudGFcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VProducto/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlByb2R1Y3RvXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VProducto/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlByb2R1Y3RvXERlbGV0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VProducto/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlByb2R1Y3RvXERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VProducto/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlByb2R1Y3RvXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VProducto/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlByb2R1Y3RvXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VVentum/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlZlbnR1bVxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VVentum/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlZlbnR1bVxEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VVentum/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlZlbnR1bVxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VVentum/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlZlbnR1bVxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VVentum/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVlZlbnR1bVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/_ViewImports.cshtml]
