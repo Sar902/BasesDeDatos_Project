@@ -33,8 +33,6 @@ public partial class SistemaInventarioFinalContext : DbContext
     public virtual DbSet<VProducto> VProducto { get; set; }
     public virtual DbSet<VVentum> VVentum { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=DefaultConnection");
 
    protected override void OnModelCreating(ModelBuilder modelBuilder)
 {

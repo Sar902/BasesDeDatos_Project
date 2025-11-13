@@ -1,38 +1,239 @@
-@model ProyectoSistemaInventarioNuevo.Models.Ventum
+@model ProyectoSistemaInventarioNuevo.ViewModels.VentaViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Crear Nueva Venta";
 }
 
-<h1>Create</h1>
+<h1>@ViewData["Title"]</h1>
 
-<h4>Ventum</h4>
+<h4>Venta</h4>
 <hr />
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Fecha" class="control-label"></label>
-                <input asp-for="Fecha" class="form-control" />
-                <span asp-validation-for="Fecha" class="text-danger"></span>
+    <form asp-action="Create" id="form-crear-venta">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label asp-for="Fecha" class="control-label"></label>
+                    <input asp-for="Fecha" class="form-control" />
+                    <span asp-validation-for="Fecha" class="text-danger"></span>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Total" class="control-label"></label>
-                <input asp-for="Total" class="form-control" />
-                <span asp-validation-for="Total" class="text-danger"></span>
+        </div>
+
+        <hr />
+
+        <div class="row align-items-end">
+            <div class="col-md-5">
+                <label class="control-label">Producto</label>
+                <select id="select-producto" asp-items="ViewBag.Productos" class="form-control">
+                    <option value="">-- Seleccione un producto --</option>
+                </select>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+            <div class="col-md-2">
+                <label class="control-label">Cantidad</label>
+                <input id="input-cantidad" type="number" value="1" min="1" class="form-control" />
             </div>
-        </form>
-    </div>
+            <div class="col-md-2">
+                <label class="control-label">Precio Unit.</label>
+                <input id="input-precio" type="text" class="form-control" readonly />
+            </div>
+            <div class="col-md-3">
+                <button type="button" id="btn-agregar-item" class="btn btn-primary">Agregar al Carrito</button>
+            </div>
+        </div>
+
+        <hr />
+
+        <h3>Detalle de Venta</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="carrito-items">
+            </tbody>
+        </table>
+
+        <div class="row justify-content-end">
+            <div class="col-md-4">
+                <h3 class="text-end">Total: <span id="display-total">0.00</span></h3>
+                <input type="hidden" asp-for="Total" id="hidden-total" />
+            </div>
+        </div>
+        
+        <div id="hidden-items-container"></div>
+
+
+        <div class="form-group mt-3">
+            <input type="submit" value="Guardar Venta" class="btn btn-success" />
+            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+
+            var itemsEnCarrito = []; // Array para mantener los IDs de productos en el carrito
+
+            // -- Evento 1: Cuando se selecciona un producto del dropdown --
+            $('#select-producto').change(function () {
+                var productoId = $(this).val();
+                if (productoId) {
+                    // Llamada AJAX a la acción que creamos en el controlador
+                    $.get('/Venta/GetProductoDetails', { id: productoId }, function (data) {
+                        // Rellenamos el precio
+                        $('#input-precio').val(data.precioVenta.toFixed(2));
+                    }).fail(function() {
+                        alert('Error al obtener los detalles del producto.');
+                    });
+                } else {
+                    $('#input-precio').val('');
+                }
+            });
+
+            // -- Evento 2: Cuando se presiona "Agregar al Carrito" --
+            $('#btn-agregar-item').click(function () {
+                var productoId = $('#select-producto').val();
+                var cantidad = parseInt($('#input-cantidad').val());
+                var precio = parseFloat($('#input-precio').val());
+                var nombre = $('#select-producto option:selected').text();
+
+                // Validaciones
+                if (!productoId) {
+                    alert('Debe seleccionar un producto.');
+                    return;
+                }
+                if (isNaN(cantidad) || cantidad <= 0) {
+                    alert('Debe ingresar una cantidad válida.');
+                    return;
+                }
+                if (isNaN(precio)) {
+                    alert('El precio no es válido.');
+                    return;
+                }
+
+                // Validar que no esté ya en el carrito
+                if (itemsEnCarrito.includes(productoId)) {
+                    alert('Este producto ya está en el carrito.');
+                    return;
+                }
+
+                // Calcular subtotal
+                var subtotal = cantidad * precio;
+
+                // Crear la fila HTML para la tabla
+                var fila = `
+                    <tr data-product-id="${productoId}" 
+                        data-cantidad="${cantidad}" 
+                        data-precio="${precio}" 
+                        data-subtotal="${subtotal}"
+                        data-nombre="${nombre}">
+                        
+                        <td>${nombre}</td>
+                        <td>${cantidad}</td>
+                        <td>${precio.toFixed(2)}</td>
+                        <td>${subtotal.toFixed(2)}</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm btn-remover-item">Quitar</button>
+                        </td>
+                    </tr>`;
+
+                // Agregar la fila a la tabla
+                $('#carrito-items').append(fila);
+                itemsEnCarrito.push(productoId); // Marcar como agregado
+
+                actualizarTotal();
+                limpiarCamposProducto();
+            });
+
+            // -- Evento 3: Cuando se presiona "Quitar" de un item --
+            // (Usamos 'on' porque los botones se crean dinámicamente)
+            $('#carrito-items').on('click', '.btn-remover-item', function () {
+                var fila = $(this).closest('tr');
+                var productoId = fila.data('product-id').toString();
+                
+                // Quitar del array de control
+                itemsEnCarrito = itemsEnCarrito.filter(id => id !== productoId);
+                
+                // Quitar la fila de la tabla
+                fila.remove();
+                
+                actualizarTotal();
+            });
+
+            // -- Evento 4: Antes de enviar el formulario (LA MAGIA) --
+            $('#form-crear-venta').submit(function (e) {
+                // Vaciar el contenedor de items ocultos
+                $('#hidden-items-container').empty();
+
+                var index = 0;
+                // Recorrer cada fila <tr> de la tabla del carrito
+                $('#carrito-items tr').each(function () {
+                    var fila = $(this);
+                    
+                    // Crear y agregar los inputs ocultos que el ViewModel espera
+                    // El 'name' es CRÍTICO: "Items[index].Propiedad"
+                    
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`
+                    );
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].NombreProducto" value="${fila.data('nombre')}" />`
+                    );
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].Cantidad" value="${fila.data('cantidad')}" />`
+                    );
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${fila.data('precio')}" />`
+                    );
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].Subtotal" value="${fila.data('subtotal')}" />`
+                    );
+
+                    index++;
+                });
+
+                if (index === 0) {
+                    alert('Debe agregar al menos un producto a la venta.');
+                    e.preventDefault(); // Detener el envío del formulario
+                    return false;
+                }
+
+                // Continuar con el envío normal del formulario
+                return true;
+            });
+
+            // -- Función para actualizar el total --
+            function actualizarTotal() {
+                var totalVenta = 0.0;
+                $('#carrito-items tr').each(function () {
+                    totalVenta += parseFloat($(this).data('subtotal'));
+                });
+
+                $('#display-total').text(totalVenta.toFixed(2));
+                $('#hidden-total').val(totalVenta);
+            }
+
+            // -- Función para limpiar los campos de producto --
+            function limpiarCamposProducto() {
+                $('#select-producto').val('');
+                $('#input-cantidad').val('1');
+                $('#input-precio').val('');
+            }
+        });
+    </script>
 }
