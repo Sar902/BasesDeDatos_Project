@@ -9,6 +9,5 @@ namespace ProyectoSistemaInventarioNuevo.ViewModels
         public VVentum? Venta { get; set; }
 
         // Propiedad para la lista de productos (usamos la vista VDetalleVentum)
-        public List<VDetalleVentum> Detalles { get; set; } = new List<VDetalleVentum>();
-    }
+public List<VentaDetailItemViewModel> Detalles { get; set; } = new List<VentaDetailItemViewModel>();    }
 }

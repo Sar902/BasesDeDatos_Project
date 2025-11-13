@@ -26,6 +26,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // GET: Venta/Details/5
+        // GET: Venta/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -33,25 +34,47 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                 return NotFound();
             }
 
-            // 1. Creamos el ViewModel
-            var viewModel = new VentaDetailsViewModel();
-
-            // 2. Buscamos la venta maestra (usando la vista VVentum)
-            viewModel.Venta = await _context.VVentum
+            // 1. Buscamos la venta maestra (usando VVentum)
+            var venta = await _context.VVentum
                 .FirstOrDefaultAsync(m => m.IdVenta == id);
 
-            if (viewModel.Venta == null)
+            if (venta == null)
             {
-                // Si no se encuentra la venta, retornamos NotFound
                 return NotFound();
             }
 
-            // 3. Buscamos los detalles de esa venta (usando la vista VDetalleVentum)
-            viewModel.Detalles = await _context.VDetalleVentum
+            // 2. Buscamos los detalles (usando VDetalleVentum)
+            var detallesDb = await _context.VDetalleVentum
                 .Where(d => d.IdVenta == id)
                 .ToListAsync();
 
-            // 4. Pasamos el ViewModel (que contiene Venta y Detalles) a la vista
+            // 3. Obtenemos los IDs de los productos de esos detalles
+            var productoIds = detallesDb.Select(d => d.IdProducto).Distinct().ToList();
+
+            // 4. Buscamos TODOS los productos necesarios en UNA sola consulta
+            var productos = await _context.Producto
+                .Where(p => productoIds.Contains(p.IdProducto))
+                .ToListAsync(); //
+
+            // 5. Unimos las dos listas (detalles + productos) usando LINQ en C#
+            var detallesVm = (from d in detallesDb
+                            join p in productos on d.IdProducto equals p.IdProducto
+                            select new VentaDetailItemViewModel // Creamos el nuevo ViewModel
+                            {
+                                NombreProducto = p.Nombre, // <-- ¡El nombre del producto!
+                                CantidadVendida = d.CantidadVendida,
+                                PrecioVentaUnitario = d.PrecioVentaUnitario,
+                                Subtotal = d.Subtotal,
+                                GananciaSubtotal = d.GananciaSubtotal
+                            }).ToList();
+
+            // 6. Creamos el ViewModel final para la vista
+            var viewModel = new VentaDetailsViewModel
+            {
+                Venta = venta,
+                Detalles = detallesVm // Asignamos nuestra lista "unida"
+            };
+
             return View(viewModel);
         }
 
