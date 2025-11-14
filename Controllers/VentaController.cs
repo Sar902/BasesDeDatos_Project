@@ -26,7 +26,6 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // GET: Venta/Details/5
-        // GET: Venta/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -97,23 +96,21 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         // POST: Venta/Create
         // POST: Venta/Create
+        // POST: Venta/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(VentaViewModel viewModel)
         {
-            // NOTA: Esta acción espera que la VISTA (que haremos después)
-            // llene la lista 'viewModel.Items' usando JavaScript.
-            // Por ahora, el formulario simple no funcionará.
-
             if (viewModel.Items == null || !viewModel.Items.Any())
             {
                 ModelState.AddModelError("", "No se puede crear una venta sin productos.");
             }
 
+            // Recargamos los productos para el dropdown en caso de error
+            ViewData["Productos"] = new SelectList(_context.VProducto!, "IdProducto", "Nombre");
+
             if (ModelState.IsValid)
             {
-                // Usamos una transacción. Si algo falla (ej. no hay stock),
-                // se revierte toda la operación.
                 using (var transaction = _context.Database.BeginTransaction())
                 {
                     try
@@ -130,46 +127,99 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                         // 2. Recorrer los productos del "carrito"
                         foreach (var item in viewModel.Items!)
                         {
-                            // 3. Buscar el producto en la base de datos
+                            // 3. Buscar el producto MAESTRO
                             var producto = await _context.Producto.FindAsync(item.IdProducto);
                             if (producto == null)
                             {
                                 throw new Exception($"Producto {item.NombreProducto} no encontrado.");
                             }
 
-                            // 4. Verificar y descontar el stock
+                            // 4. Verificar y descontar el stock MAESTRO
                             if (producto.Cantidad < item.Cantidad)
                             {
-                                throw new Exception($"No hay suficiente stock para {producto.Nombre}. Stock actual: {producto.Cantidad}");
+                                throw new Exception($"No hay suficiente stock total para {producto.Nombre}. Stock actual: {producto.Cantidad}");
                             }
-                            producto.Cantidad -= item.Cantidad; // Descontamos el stock
+                            producto.Cantidad -= item.Cantidad; // Descontamos el stock MAESTRO
+
+                            // === INICIO DE LA MEJORA ===
+                            // ¡Mae, aquí está su lógica!
+                            // Si el stock maestro llega a 0, lo inactivamos.
+                            if (producto.Cantidad == 0)
+                            {
+                                producto.Estado = "Inactivo";
+                            }
+                            // === FIN DE LA MEJORA ===
+
                             _context.Update(producto);
 
-                            // OJO: Tu DetalleVentum pide un PrecioCompraUnitario.
-                            // Debemos obtenerlo de alguna parte. Lo ideal es de la vista VProducto.
-                            // 1. OBTENEMOS EL vProducto ANTES de crear el DetalleVentum
-                            var vProducto = await _context.VProducto.FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
+                            // --- INICIO DE LA CIRUGÍA (Paso 5: Lógica FIFO) ---
 
-                            // 5. Crear el DetalleVentum
+                            int cantidadAVender = item.Cantidad; // Cantidad que necesitamos despachar
+
+                            // Buscamos los lotes de este producto, del más antiguo al más nuevo,
+                            // que todavía tengan stock disponible.
+                            var lotesDisponibles = await _context.Inventario
+                                .Where(lote => lote.IdProducto == item.IdProducto && lote.CantidadDisponible > 0)
+                                .OrderBy(lote => lote.FechaEntrada)
+                                .ToListAsync(); //
+
+                            foreach (var lote in lotesDisponibles)
+                            {
+                                if (cantidadAVender <= 0) 
+                                {
+                                    break; // Ya completamos la cantidad de esta venta
+                                }
+
+                                if (lote.CantidadDisponible >= cantidadAVender)
+                                {
+                                    // Este lote tiene suficiente para cubrir lo que falta
+                                    lote.CantidadDisponible -= cantidadAVender;
+                                    cantidadAVender = 0; // Venta completada
+                                }
+                                else
+                                {
+                                    // Este lote se vacía y seguimos al siguiente
+                                    cantidadAVender -= lote.CantidadDisponible;
+                                    lote.CantidadDisponible = 0;
+                                }
+
+                                // (Opcional) Actualizar estado si se vació
+                                if (lote.CantidadDisponible == 0)
+                                {
+                                    lote.Estado = "Agotado";
+                                    lote.FechaSalida = DateTime.Now;
+                                }
+                                _context.Update(lote);
+                            }
+
+                            // Si después de recorrer todos los lotes aún falta cantidad,
+                            // es un error de integridad de datos (Total no calza con Lotes).
+                            if (cantidadAVender > 0)
+                            {
+                                throw new Exception($"Inconsistencia de datos. El stock total de {producto.Nombre} es {producto.Cantidad}, pero los lotes de inventario no suman esa cantidad.");
+                            }
+                            
+                            // --- FIN DE LA CIRUGÍA (Paso 5) ---
+
+
+                            // 6. Crear el DetalleVentum
+                            var vProducto = await _context.VProducto.FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
                             var detalleVenta = new DetalleVentum
                             {
-                                IdVenta = venta.IdVenta, // Asignamos el ID de la venta maestra
+                                IdVenta = venta.IdVenta,
                                 IdProducto = item.IdProducto,
                                 CantidadVendida = item.Cantidad,
                                 PrecioVentaUnitario = item.PrecioVentaUnitario,
-                                // El Subtotal se calculará por la base de datos (si tienes triggers) o lo asignamos
-                                Subtotal = item.Subtotal,
-                                
-                                // AHORA sÍ podemos usar la variable vProducto
+                                // Subtotal fue eliminado (es calculado por SQL)
                                 PrecioCompraUnitario = vProducto?.PrecioCompra ?? 0,
                             };
                             _context.Add(detalleVenta);
                         }
 
-                        // 6. Guardar todos los cambios (Detalles y actualización de stock)
+                        // 7. Guardar todos los cambios (Stock Maestro, Lotes, Detalles)
                         await _context.SaveChangesAsync();
 
-                        // 7. Confirmar la transacción
+                        // 8. Confirmar la transacción
                         await transaction.CommitAsync();
 
                         return RedirectToAction(nameof(Index));
@@ -182,9 +232,8 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                     }
                 }
             }
-
-            // Si el modelo falla, recargamos la lista de productos
-            ViewData["Productos"] = new SelectList(_context.VProducto, "IdProducto", "Nombre");
+            
+            // Si el modelo falla, se devuelve a la vista
             return View(viewModel);
         }
 

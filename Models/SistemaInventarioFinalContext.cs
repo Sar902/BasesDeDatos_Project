@@ -65,21 +65,28 @@ public partial class SistemaInventarioFinalContext : DbContext
     });
 
     // DetalleVenta
-    modelBuilder.Entity<DetalleVentum>(entity =>
-    {
-        entity.HasKey(e => e.IdDetalleVenta);
-        entity.ToTable("DetalleVenta");
+   // DetalleVenta
+        modelBuilder.Entity<DetalleVentum>(entity =>
+        {
+            entity.HasKey(e => e.IdDetalleVenta);
+            entity.ToTable("DetalleVenta");
 
-        entity.HasOne(dv => dv.IdProductoNavigation)
-              .WithMany(p => p.DetalleVenta)
-              .HasForeignKey(dv => dv.IdProducto)
-              .OnDelete(DeleteBehavior.Restrict);
+            // Le decimos a EF Core que 'Subtotal' es calculado en la BD.
+            // Asumimos que el cálculo es [CantidadVendida] * [PrecioVentaUnitario]
+            entity.Property(e => e.Subtotal)
+                  .HasComputedColumnSql("([CantidadVendida] * [PrecioVentaUnitario])");
+            // === FIN DEL CAMBIO ===
 
-        entity.HasOne(dv => dv.IdVentaNavigation)
-              .WithMany(v => v.DetalleVenta)
-              .HasForeignKey(dv => dv.IdVenta)
-              .OnDelete(DeleteBehavior.Restrict);
-    });
+            entity.HasOne(dv => dv.IdProductoNavigation)
+                  .WithMany(p => p.DetalleVenta)
+                  .HasForeignKey(dv => dv.IdProducto)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(dv => dv.IdVentaNavigation)
+                  .WithMany(v => v.DetalleVenta)
+                  .HasForeignKey(dv => dv.IdVenta)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
 
     // DetalleSolicitudDevolucion
     modelBuilder.Entity<DetalleSolicitudDevolucion>(entity =>

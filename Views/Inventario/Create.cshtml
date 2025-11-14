@@ -1,59 +1,55 @@
 @model ProyectoSistemaInventarioNuevo.Models.Inventario
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Crear Entrada de Inventario";
 }
 
-<h1>Create</h1>
+<h1>Crear</h1>
 
-<h4>Inventario</h4>
+<h4>Nueva Entrada de Inventario</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="All" class="text-danger"></div>           
+             <div class="form-group">
+            
             <div class="form-group">
-                <label asp-for="IdProducto" class="control-label"></label>
-                <input asp-for="IdProducto" class="form-control" />
+                <label asp-for="IdProducto" class="control-label">Producto</label>
+                <select asp-for="IdProducto" class ="form-control" asp-items="ViewBag.IdProducto">
+                    <option value="">-- Seleccione un Producto --</option>
+                </select>
                 <span asp-validation-for="IdProducto" class="text-danger"></span>
             </div>
+            
             <div class="form-group">
-                <label asp-for="IdProveedor" class="control-label"></label>
-                <input asp-for="IdProveedor" class="form-control" />
+                <label asp-for="IdProveedor" class="control-label">Proveedor</label>
+                <select asp-for="IdProveedor" class ="form-control" asp-items="ViewBag.IdProveedor">
+                    <option value="">-- Seleccione un Proveedor --</option>
+                </select>
                 <span asp-validation-for="IdProveedor" class="text-danger"></span>
             </div>
+            
             <div class="form-group">
-                <label asp-for="Cantidad" class="control-label"></label>
+                <label asp-for="Cantidad" class="control-label">Cantidad (Total que entra)</label>
                 <input asp-for="Cantidad" class="form-control" />
                 <span asp-validation-for="Cantidad" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="CantidadDisponible" class="control-label"></label>
-                <input asp-for="CantidadDisponible" class="form-control" />
-                <span asp-validation-for="CantidadDisponible" class="text-danger"></span>
-            </div>
+            
             <div class="form-group">
                 <label asp-for="PrecioCompra" class="control-label"></label>
                 <input asp-for="PrecioCompra" class="form-control" />
                 <span asp-validation-for="PrecioCompra" class="text-danger"></span>
             </div>
+            
             <div class="form-group">
                 <label asp-for="FechaEntrada" class="control-label"></label>
-                <input asp-for="FechaEntrada" class="form-control" />
+                <input asp-for="FechaEntrada" class="form-control" type="date" />
                 <span asp-validation-for="FechaEntrada" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="FechaSalida" class="control-label"></label>
-                <input asp-for="FechaSalida" class="form-control" />
-                <span asp-validation-for="FechaSalida" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Estado" class="control-label"></label>
-                <input asp-for="Estado" class="form-control" />
-                <span asp-validation-for="Estado" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+            
+            <div class="form-group mt-3">
+                <input type="submit" value="Guardar Entrada" class="btn btn-primary" />
             </div>
         </form>
     </div>

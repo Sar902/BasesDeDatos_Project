@@ -87,16 +87,15 @@
     <script>
         $(document).ready(function () {
 
-            var itemsEnCarrito = []; // Array para mantener los IDs de productos en el carrito
+            var itemsEnCarrito = []; 
 
             // -- Evento 1: Cuando se selecciona un producto del dropdown --
             $('#select-producto').change(function () {
                 var productoId = $(this).val();
                 if (productoId) {
-                    // Llamada AJAX a la acción que creamos en el controlador
                     $.get('/Venta/GetProductoDetails', { id: productoId }, function (data) {
-                        // Rellenamos el precio
-                        $('#input-precio').val(data.precioVenta.toFixed(2));
+                        // Mostramos el precio con COMA
+                        $('#input-precio').val(data.precioVenta.toFixed(2).replace('.', ',')); // <-- CAMBIO
                     }).fail(function() {
                         alert('Error al obtener los detalles del producto.');
                     });
@@ -109,7 +108,8 @@
             $('#btn-agregar-item').click(function () {
                 var productoId = $('#select-producto').val();
                 var cantidad = parseInt($('#input-cantidad').val());
-                var precio = parseFloat($('#input-precio').val());
+                // Leemos el valor con COMA y lo convertimos a número (con punto)
+                var precio = parseFloat($('#input-precio').val().replace(',', '.')); // <-- CAMBIO
                 var nombre = $('#select-producto option:selected').text();
 
                 // Validaciones
@@ -122,20 +122,23 @@
                     return;
                 }
                 if (isNaN(precio)) {
-                    alert('El precio no es válido.');
+                    // Validamos que el input de precio no esté vacío o mal escrito
+                    alert('El precio no es válido. Asegúrese de usar comas para decimales.');
                     return;
                 }
 
-                // Validar que no esté ya en el carrito
                 if (itemsEnCarrito.includes(productoId)) {
                     alert('Este producto ya está en el carrito.');
                     return;
                 }
 
-                // Calcular subtotal
                 var subtotal = cantidad * precio;
 
-                // Crear la fila HTML para la tabla
+                // Usamos toLocaleString para mostrar comas en la tabla del carrito
+                var precioDisplay = precio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                var subtotalDisplay = subtotal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                // Almacenamos los números (con punto) en 'data-'
                 var fila = `
                     <tr data-product-id="${productoId}" 
                         data-cantidad="${cantidad}" 
@@ -145,49 +148,39 @@
                         
                         <td>${nombre}</td>
                         <td>${cantidad}</td>
-                        <td>${precio.toFixed(2)}</td>
-                        <td>${subtotal.toFixed(2)}</td>
-                        <td>
+                        <td>${precioDisplay}</td> <td>${subtotalDisplay}</td> <td>
                             <button type="button" class="btn btn-danger btn-sm btn-remover-item">Quitar</button>
                         </td>
                     </tr>`;
 
-                // Agregar la fila a la tabla
                 $('#carrito-items').append(fila);
-                itemsEnCarrito.push(productoId); // Marcar como agregado
-
+                itemsEnCarrito.push(productoId);
                 actualizarTotal();
                 limpiarCamposProducto();
             });
 
             // -- Evento 3: Cuando se presiona "Quitar" de un item --
-            // (Usamos 'on' porque los botones se crean dinámicamente)
             $('#carrito-items').on('click', '.btn-remover-item', function () {
                 var fila = $(this).closest('tr');
                 var productoId = fila.data('product-id').toString();
                 
-                // Quitar del array de control
                 itemsEnCarrito = itemsEnCarrito.filter(id => id !== productoId);
-                
-                // Quitar la fila de la tabla
                 fila.remove();
-                
                 actualizarTotal();
             });
 
             // -- Evento 4: Antes de enviar el formulario (LA MAGIA) --
             $('#form-crear-venta').submit(function (e) {
-                // Vaciar el contenedor de items ocultos
                 $('#hidden-items-container').empty();
-
                 var index = 0;
-                // Recorrer cada fila <tr> de la tabla del carrito
+
                 $('#carrito-items tr').each(function () {
                     var fila = $(this);
                     
-                    // Crear y agregar los inputs ocultos que el ViewModel espera
-                    // El 'name' es CRÍTICO: "Items[index].Propiedad"
-                    
+                    // Convertimos los números a strings con COMA para el backend
+                    var precioString = fila.data('precio').toString().replace('.', ',');   // <-- CAMBIO
+                    var subtotalString = fila.data('subtotal').toString().replace('.', ','); // <-- CAMBIO
+
                     $('#hidden-items-container').append(
                         `<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`
                     );
@@ -198,10 +191,10 @@
                         `<input type="hidden" name="Items[${index}].Cantidad" value="${fila.data('cantidad')}" />`
                     );
                     $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${fila.data('precio')}" />`
+                        `<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${precioString}" />` // <-- CAMBIO
                     );
                     $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].Subtotal" value="${fila.data('subtotal')}" />`
+                        `<input type="hidden" name="Items[${index}].Subtotal" value="${subtotalString}" />` // <-- CAMBIO
                     );
 
                     index++;
@@ -209,11 +202,9 @@
 
                 if (index === 0) {
                     alert('Debe agregar al menos un producto a la venta.');
-                    e.preventDefault(); // Detener el envío del formulario
+                    e.preventDefault(); 
                     return false;
                 }
-
-                // Continuar con el envío normal del formulario
                 return true;
             });
 
@@ -224,8 +215,10 @@
                     totalVenta += parseFloat($(this).data('subtotal'));
                 });
 
-                $('#display-total').text(totalVenta.toFixed(2));
-                $('#hidden-total').val(totalVenta);
+                // Mostramos el total con COMA
+                $('#display-total').text(totalVenta.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); // <-- CAMBIO
+                // Enviamos el total con COMA
+                $('#hidden-total').val(totalVenta.toString().replace('.', ',')); // <-- CAMBIO
             }
 
             // -- Función para limpiar los campos de producto --

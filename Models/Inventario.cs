@@ -21,9 +21,9 @@ public partial class Inventario
 
     public DateTime? FechaSalida { get; set; }
 
-    public string Estado { get; set; } = null!;
+    public string? Estado { get; set; }
 
-    public virtual Producto IdProductoNavigation { get; set; } = null!;
+    public virtual Producto? IdProductoNavigation { get; set; }
 
     public virtual Proveedor? IdProveedorNavigation { get; set; }
 
