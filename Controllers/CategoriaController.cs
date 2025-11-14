@@ -18,11 +18,15 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-        // GET: Categoria
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.Categoria.ToListAsync());
-        }
+     // GET: Categoria
+      public async Task<IActionResult> Index()
+     {
+     var categorias = await _context.Categoria
+                                   .AsNoTracking()
+                                   .ToListAsync();
+     return View(categorias);
+     }
+
 
         // GET: Categoria/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -137,14 +141,14 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
      public async Task<IActionResult> DeleteConfirmed(int id)
-{
+    {
     var categorium = await _context.Categoria.FindAsync(id);
     if (categorium == null)
     {
         return NotFound();
     }
 
-    //VALIDACIÓN: revisar si la categoría tiene productos relacionados
+    // VALIDACIÓN: revisar si tiene productos relacionados
     var tieneProductos = _context.Producto.Any(p => p.IdCategoria == id);
     if (tieneProductos)
     {
@@ -152,12 +156,11 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         return View(categorium); 
     }
 
-    // Si no tiene productos, eliminar
     _context.Categoria.Remove(categorium);
     await _context.SaveChangesAsync();
-
     return RedirectToAction(nameof(Index));
 }
+
         private bool CategoriumExists(int id)
         {
             return _context.Categoria.Any(e => e.IdCategoria == id);

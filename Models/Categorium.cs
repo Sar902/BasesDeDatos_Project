@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProyectoSistemaInventarioNuevo.Models;
 
@@ -9,6 +10,7 @@ public partial class Categorium
 
     public string Nombre { get; set; } = null!;
 
+    [Display(Name = "Porcentaje de Ganancia")]
     public decimal PorcentajeGanancia { get; set; }
 
     public string Estado { get; set; } = null!;

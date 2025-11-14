@@ -45,12 +45,11 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // GET: Producto/Create
-        public IActionResult Create()
-        {
-            // Agregamos esta línea para enviar la lista de categorías a la vista:
-            ViewData["IdCategoria"] = new SelectList(_context.Categoria, "IdCategoria", "Nombre");
-            return View();
-        }
+       public IActionResult Create()
+       {
+        ViewBag.IdCategoria = new SelectList(_context.Categoria, "IdCategoria", "Nombre");
+        return View(new Producto()); // <--- PASAR UN MODELO VACÍO
+       }
 
         // POST: Producto/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -58,10 +57,11 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // POST: Producto/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre,Cantidad,Estado")] Producto producto)
+        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre,Estado")] Producto producto)
         {
             if (ModelState.IsValid)
             {
+                producto.Cantidad = 0;
                 _context.Add(producto);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -99,33 +99,43 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // POST: Producto/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdProducto,IdCategoria,Nombre,Cantidad,Estado")] Producto producto)
+        public async Task<IActionResult> Edit(int id, [Bind("IdProducto,IdCategoria,Nombre,Estado")] Producto producto)
         {
             if (id != producto.IdProducto)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(producto);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProductoExists(producto.IdProducto))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
+        if (ModelState.IsValid)
+{
+    try
+    {
+        var productoDB = await _context.Producto
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.IdProducto == id);
+
+        if (productoDB == null) return NotFound();
+
+        // Mantener cantidad original (no editable)
+        producto.Cantidad = productoDB.Cantidad;
+
+        _context.Update(producto);
+        await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        if (!ProductoExists(producto.IdProducto))
+        {
+            return NotFound();
+        }
+        else
+        {
+            throw;
+        }
+    }
+    return RedirectToAction(nameof(Index));
+}
+
             // === INICIO DE CAMBIOS ===
             // Si algo falla, recargamos la lista para que no dé error:
             ViewData["IdCategoria"] = new SelectList(_context.Categoria, "IdCategoria", "Nombre", producto.IdCategoria);
@@ -166,13 +176,14 @@ public async Task<IActionResult> DeleteConfirmed(int id)
     }
 
     // VALIDACIÓN: revisar si tiene relaciones
-    var tieneRelacion = _context.DetallePerdida.Any(dp => dp.IdProducto == id) ||
+    var tieneRelacion = _context.Inventario.Any(I => I.IdProducto == id) ||
+                        _context.DetallePerdida.Any(dp => dp.IdProducto == id) ||
                         _context.DetalleVenta.Any(dv => dv.IdProducto == id) ||
                         _context.DetalleSolicitudDevolucion.Any(dd => dd.IdProducto == id);
 
     if (tieneRelacion)
     {
-        ModelState.AddModelError("", "No se puede eliminar este producto porque tiene registros relacionados.");
+        ModelState.AddModelError("", "No se puede eliminar este producto.");
         return View(producto); // regresamos a la vista sin eliminar
     }
 
