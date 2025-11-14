@@ -136,18 +136,28 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // POST: Categoria/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var categorium = await _context.Categoria.FindAsync(id);
-            if (categorium != null)
-            {
-                _context.Categoria.Remove(categorium);
-            }
+     public async Task<IActionResult> DeleteConfirmed(int id)
+{
+    var categorium = await _context.Categoria.FindAsync(id);
+    if (categorium == null)
+    {
+        return NotFound();
+    }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+    //VALIDACIÓN: revisar si la categoría tiene productos relacionados
+    var tieneProductos = _context.Producto.Any(p => p.IdCategoria == id);
+    if (tieneProductos)
+    {
+        ModelState.AddModelError("", "No se puede eliminar esta categoría porque tiene productos relacionados.");
+        return View(categorium); 
+    }
 
+    // Si no tiene productos, eliminar
+    _context.Categoria.Remove(categorium);
+    await _context.SaveChangesAsync();
+
+    return RedirectToAction(nameof(Index));
+}
         private bool CategoriumExists(int id)
         {
             return _context.Categoria.Any(e => e.IdCategoria == id);

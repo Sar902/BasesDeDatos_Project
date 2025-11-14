@@ -4,37 +4,69 @@
 
 <div class="d-flex" id="wrapper">
 
-    <!-- Sidebar -->
-    <div class="bg-light border-end" id="sidebar-wrapper">
-        <div class="sidebar-heading text-center py-4 fw-bold fs-4 border-bottom">
-            Panel Principal
-        </div>
-        <div class="list-group list-group-flush">
-            <a asp-controller="Producto" asp-action="Index" class="list-group-item list-group-item-action">Productos</a>
-            <a asp-controller="Categoria" asp-action="Index" class="list-group-item list-group-item-action">Categorías</a>
-            <a asp-controller="Inventario" asp-action="Index" class="list-group-item list-group-item-action">Inventario</a>
-            <a asp-controller="Perdida" asp-action="Index" class="list-group-item list-group-item-action">Pérdidas</a>
-            <a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item list-group-item-action">Detalle Pérdidas</a>
-            <a asp-controller="Venta" asp-action="Index" class="list-group-item list-group-item-action">Ventas</a>
-            <a asp-controller="DetalleVenta" asp-action="Index" class="list-group-item list-group-item-action">Detalle Ventas</a>
-            <a asp-controller="Proveedor" asp-action="Index" class="list-group-item list-group-item-action">Proveedores</a>
-            <a asp-controller="SolicitudDevolucion" asp-action="Index" class="list-group-item list-group-item-action">Solicitud Devolución</a>
-            <a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="list-group-item list-group-item-action">Detalle Solicitud Devolución</a>
-           <a asp-controller="VVentum" asp-action="Index" class="list-group-item list-group-item-action">Vista venta</a>
-         <a asp-controller="VDetalleVentum" asp-action="Index" class="list-group-item list-group-item-action">Vista detalle venta</a>
-         <a asp-controller="VProducto" asp-action="Index" class="list-group-item list-group-item-action">Vista producto</a>
-        <a asp-controller="VDetallePerdidum" asp-action="Index" class="list-group-item list-group-item-action">Vista detalle perdida</a>
-        
-        
-        
-        
-        
-        </div>
-    </div>
+    <!-- SIDEBAR -->
+    <nav id="sidebar-wrapper">
+        <div class="sidebar-heading text-center py-4 fw-bold fs-4">Sistema de Ventas</div>
+        <ul class="list-group list-group-flush">
+            <li><a asp-controller="Producto" asp-action="Index" class="list-group-item">Productos</a></li>
+            <li><a asp-controller="Categoria" asp-action="Index" class="list-group-item">Categorías</a></li>
+            <li><a asp-controller="Inventario" asp-action="Index" class="list-group-item">Inventario</a></li>
+            <li><a asp-controller="Venta" asp-action="Index" class="list-group-item">Ventas</a></li>
+            <li><a asp-controller="DetalleVenta" asp-action="Index" class="list-group-item">Detalle venta</a></li>
+            <li><a asp-controller="Proveedor" asp-action="Index" class="list-group-item">Proveedores</a></li>
+            <li><a asp-controller="Perdida" asp-action="Index" class="list-group-item">Pérdidas</a></li>
+              <li><a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item">Detalle Pérdidas</a></li>
+            <li><a asp-controller="SolicitudDevolucion" asp-action="Index" class="list-group-item">Devoluciones</a></li>
+            <li><a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="list-group-item">Detalle devoluciones</a></li>
+            
+        </ul>
+    </nav>
 
-    <!-- Page Content -->
-    <div id="page-content-wrapper" class="p-4 flex-fill">
-        <h2 class="text-center mb-4">Bienvenido al Panel Principal</h2>
-        <p class="text-center text-muted">Selecciona una opción del menú lateral para comenzar.</p>
+    <!-- CONTENIDO PRINCIPAL -->
+   <div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-4">
+            <h6>Total Productos</h6>
+            <p class="display-6 fw-bold">@ViewBag.TotalProductos</p>
+        </div>
     </div>
+    <div class="col-md-3">
+        <div class="card text-center p-4">
+            <h6>Total Ventas</h6>
+            <p class="display-6 fw-bold">$@ViewBag.TotalVentas</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-4">
+            <h6>Pérdidas del mes</h6>
+            <p class="display-6 fw-bold">@ViewBag.PerdidasMes</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-4">
+            <h6>Proveedores activos</h6>
+            <p class="display-6 fw-bold">@ViewBag.ProveedoresActivos</p>
+        </div>
+    </div>
+</div>
+
+<div class="card inventario-bajo p-3">
+<h5 class="mt-5">Productos con inventario bajo</h5>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Stock disponible</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var item in ViewBag.InventarioBajo)
+        {
+            <tr>
+                <td>@item.IdProductoNavigation.Nombre</td>
+                <td>@item.CantidadDisponible</td>
+            </tr>
+        }
+    </tbody>
+</table>
 </div>

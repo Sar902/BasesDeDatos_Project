@@ -1,31 +1,105 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProyectoSistemaInventarioNuevo.Models;
+using System.Diagnostics;
 
-namespace ProyectoSistemaInventarioNuevo.Controllers;
-
-public class HomeController : Controller
+namespace ProyectoSistemaInventarioNuevo.Controllers
 {
-    private readonly ILogger<HomeController> _logger;
-
-    public HomeController(ILogger<HomeController> logger)
+    public class HomeController : Controller
     {
-        _logger = logger;
-    }
+        private readonly ILogger<HomeController> _logger;
+        private readonly SistemaInventarioFinalContext _context;
 
-    public IActionResult Index()
-    {
-        return View();
-    }
+        public HomeController(ILogger<HomeController> logger, SistemaInventarioFinalContext context)
+        {
+            _logger = logger;
+            _context = context;
+        }
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+      public async Task<IActionResult> Index()
+{
+    var mesActual = DateTime.Now.Month;
+    var añoActual = DateTime.Now.Year;
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    // Productos
+    var productos = await _context.Producto
+        .Include(p => p.IdCategoriaNavigation)
+        .Where(p => p.Estado == "Activo")
+        .ToListAsync();
+
+    // Productos con inventario bajo
+    var inventarioBajo = await _context.Inventario
+        .Include(i => i.IdProductoNavigation)
+        .Where(i => i.CantidadDisponible <= 10)
+        .ToListAsync();
+
+    // Ventas del mes
+    var ventasMes = await _context.Venta
+        .Where(v => v.Fecha.Month == mesActual && v.Fecha.Year == añoActual)
+        .ToListAsync();
+
+    // Detalle ventas
+    var detalleVentas = await _context.DetalleVenta
+        .Include(dv => dv.IdProductoNavigation)
+        .Include(dv => dv.IdVentaNavigation)
+        .ToListAsync();
+
+    // Pérdidas del mes
+    var perdidasMes = await _context.Perdida
+        .Where(p => p.Fecha.Month == mesActual && p.Fecha.Year == añoActual)
+        .ToListAsync();
+
+    // Detalle pérdidas
+    var detallePerdidas = await _context.DetallePerdida
+        .Include(dp => dp.IdProductoNavigation)
+        .Include(dp => dp.IdPerdidaNavigation)
+        .ToListAsync();
+
+    // Proveedores activos
+    var proveedoresActivos = await _context.Proveedor
+        .Where(p => p.Estado == "Activo")
+        .ToListAsync();
+
+    // Devoluciones
+    var devoluciones = await _context.SolicitudDevolucion
+        .Include(d => d.IdInventarioNavigation)
+        .ToListAsync();
+
+    // Detalle devoluciones
+    var detalleDevoluciones = await _context.DetalleSolicitudDevolucion
+        .Include(dd => dd.IdProductoNavigation)
+        .Include(dd => dd.IdSolicitudNavigation)
+        .ToListAsync();
+
+    // Totales
+    ViewBag.TotalProductos = productos.Count;
+    ViewBag.TotalVentas = ventasMes.Sum(v => v.Total);
+    ViewBag.PerdidasMes = perdidasMes.Count;
+    ViewBag.ProveedoresActivosCount = proveedoresActivos.Count;
+
+    // Datos para tablas
+    ViewBag.Productos = productos;
+    ViewBag.InventarioBajo = inventarioBajo;
+    ViewBag.VentasMes = ventasMes;
+    ViewBag.DetalleVentas = detalleVentas;
+    ViewBag.Perdidas = perdidasMes;
+    ViewBag.DetallePerdidas = detallePerdidas;
+    ViewBag.ProveedoresActivos = proveedoresActivos;
+    ViewBag.Devoluciones = devoluciones;
+    ViewBag.DetalleDevoluciones = detalleDevoluciones;
+
+    return View();
+}
+
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
     }
 }

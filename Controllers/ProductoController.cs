@@ -154,17 +154,35 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // POST: Producto/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var producto = await _context.Producto.FindAsync(id);
-            if (producto != null)
-            {
-                _context.Producto.Remove(producto);
-            }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+
+public async Task<IActionResult> DeleteConfirmed(int id)
+{
+    // Buscar el producto
+    var producto = await _context.Producto.FindAsync(id);
+    if (producto == null)
+    {
+        return NotFound();
+    }
+
+    // VALIDACIÓN: revisar si tiene relaciones
+    var tieneRelacion = _context.DetallePerdida.Any(dp => dp.IdProducto == id) ||
+                        _context.DetalleVenta.Any(dv => dv.IdProducto == id) ||
+                        _context.DetalleSolicitudDevolucion.Any(dd => dd.IdProducto == id);
+
+    if (tieneRelacion)
+    {
+        ModelState.AddModelError("", "No se puede eliminar este producto porque tiene registros relacionados.");
+        return View(producto); // regresamos a la vista sin eliminar
+    }
+
+    // Si no tiene relaciones, eliminar
+    _context.Producto.Remove(producto);
+    await _context.SaveChangesAsync();
+
+    return RedirectToAction(nameof(Index));
+}
+
 
         private bool ProductoExists(int id)
         {

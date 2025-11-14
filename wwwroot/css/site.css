@@ -1,87 +1,92 @@
-html {
-  font-size: 14px;
+:root {
+    --azul: #007bff;
+    --celeste: #47c7ff;
+    --aqua: #00eaff;
+
+    --fondo-claro: #f1faff;
+    --fondo-tarjeta: #ffffff;
+    --texto-primario: #003d66;
+    --texto-secundario: #6c757d;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+.dark-mode {
+    --fondo-claro: #0d1117;
+    --fondo-tarjeta: #161b22;
+    --texto-primario: #c9d1d9;
+    --texto-secundario: #8b949e;
+    --azul: #0ea5ff;
+    --celeste: #1fbfff;
+    --aqua: #00f7ff;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
+body { background-color: var(--fondo-claro); color: var(--texto-primario); font-family:"Segoe UI", sans-serif; transition:0.3s; }
 
-html {
-  position: relative;
-  min-height: 100%;
-}
+#wrapper { display:flex; min-height:100vh; }
 
-body {
-  margin-bottom: 60px;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
-}
-
-    body {
-        background-color: #f8f9fa;
-    }
-    .btn {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-    /* ======== PANEL LATERAL ======== */
-#wrapper {
-    display: flex;
-    min-height: 100vh;
-}
-
-/* Sidebar */
+/* SIDEBAR */
 #sidebar-wrapper {
-    width: 260px;
-    min-height: 100vh;
-    background-color: #ffffff;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    width:260px; min-height:100vh;
+    background: linear-gradient(180deg,var(--azul),var(--celeste));
+    color:white; padding-bottom:20px; box-shadow:3px 0 10px rgba(0,0,0,0.1); transition:0.3s;
 }
-
-.sidebar-heading {
-    background-color: #007bff;
-    color: white;
-    letter-spacing: 0.5px;
-}
-
-.list-group-item {
+#sidebar-wrapper .list-group-item { background:transparent; color:white; border:none; padding:14px 22px; transition:0.2s; }
+#sidebar-wrapper .list-group-item:hover { background: rgba(255,255,255,0.2); color:#003d66; transform:translateX(6px); font-weight:bold; }
+.btn-sidebar {
+    background: transparent;
     border: none;
-    padding: 15px 20px;
-    font-size: 1.05rem;
-    transition: all 0.2s ease-in-out;
-}
-
-.list-group-item:hover {
-    background-color: #007bff;
+    width: 100%;
+    text-align: left;
+    padding: 14px 22px;
     color: white;
-    transform: translateX(5px);
+    cursor: pointer;
+}
+.btn-sidebar:hover {
+    background: rgba(255,255,255,0.2);
+    color: #003d66;
+    font-weight: bold;
+    transform: translateX(6px);
 }
 
-/* Contenido */
-#page-content-wrapper {
-    flex: 1;
-    background-color: #f8f9fa;
+
+.dark-mode #sidebar-wrapper { background: linear-gradient(180deg,#0ea5ff,#004e7a); box-shadow:3px 0 10px rgba(0,0,0,0.4); }
+
+/* PAGE CONTENT */
+#page-content-wrapper { flex:1; padding:30px; background-color: var(--fondo-claro); transition:0.3s; }
+
+.card { background-color:var(--fondo-tarjeta); border-radius:12px; padding:20px; box-shadow:0 6px 15px rgba(0,0,0,0.1); transition:0.3s; }
+.card:hover { transform:translateY(-5px); box-shadow:0 10px 20px rgba(0,0,0,0.15); }
+.card h5 { color:var(--azul); margin-bottom:10px; }
+
+/* TOPBAR */
+.topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+
+/* BOTONES */
+.btn { background-color:var(--celeste); color:#003d66; border:none; box-shadow:0 4px 10px rgba(0,139,255,0.25); transition:0.2s; }
+.btn:hover { background-color:var(--aqua); transform:translateY(-3px); box-shadow:0 6px 12px rgba(0,139,255,0.35); }
+.dark-mode .btn { background-color:var(--azul); color:white; }
+.tabla-datos {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
 }
 
-body {
+
+.dashboard-card {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.dashboard-card h6 {
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+.dashboard-card p {
+    font-size: 1.25rem;
+    font-weight: bold;
     margin: 0;
-    background-color: #f8f9fa;
 }
-
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,139,255,0.25);
+}

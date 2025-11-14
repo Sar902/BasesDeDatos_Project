@@ -389,7 +389,6 @@ C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ProyectoSistemaI
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.genruntimeconfig.cache
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ref\ProyectoSistemaInventarioNuevo.dll
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.sourcelink.json
-C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-mr6nqb54rz-mr6nqb54rz.gz
 C:\Users\User\BD\BasesDeDatos_Project\bin\Debug\net10.0\BuildHost-net472\Microsoft.Build.Locator.dll
 C:\Users\User\BD\BasesDeDatos_Project\bin\Debug\net10.0\BuildHost-net472\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.exe
 C:\Users\User\BD\BasesDeDatos_Project\bin\Debug\net10.0\BuildHost-net472\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.exe.config
@@ -782,3 +781,4 @@ C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\refint\ProyectoSistemaIn
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.pdb
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.genruntimeconfig.cache
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ref\ProyectoSistemaInventarioNuevo.dll
+C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-he7c569627-he7c569627.gz

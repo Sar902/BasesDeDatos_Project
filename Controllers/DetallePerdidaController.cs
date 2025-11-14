@@ -53,16 +53,41 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdDetallePerdida,IdPerdida,IdProducto,CantidadPerdida,PrecioCompraUnitario,SubtotalPerdida")] DetallePerdidum detallePerdidum)
+       public async Task<IActionResult> Create([Bind("IdDetallePerdida,IdPerdida,IdProducto,CantidadPerdida,PrecioCompraUnitario,SubtotalPerdida")] DetallePerdidum detallePerdidum)
+{
+    var producto = await _context.Producto.FindAsync(detallePerdidum.IdProducto);
+
+    // VALIDACIÓN: la cantidad a perder no puede ser mayor que la disponible
+    if(producto != null && detallePerdidum.CantidadPerdida > producto.Cantidad)
+    {
+        ModelState.AddModelError("", "La cantidad a perder no puede ser mayor que la cantidad disponible del producto.");
+        return View(detallePerdidum); // retorna la vista con mensaje
+    }
+
+    if (ModelState.IsValid)
+    {
+        // ACTUALIZAR CANTIDAD DEL PRODUCTO AUTOMÁTICAMENTE
+        if(producto != null)
         {
-            if (ModelState.IsValid)
+            producto.Cantidad -= detallePerdidum.CantidadPerdida;
+
+            // Si la cantidad llega a 0, cambiar estado o poner fecha de salida
+            if(producto.Cantidad <= 0)
             {
-                _context.Add(detallePerdidum);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                producto.Cantidad = 0;
+                producto.Estado = "Agotado"; // o producto.FechaSalida = DateTime.Now si tienes ese campo
             }
-            return View(detallePerdidum);
+
+            _context.Update(producto);
         }
+
+        _context.Add(detallePerdidum);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    return View(detallePerdidum);
+}
 
         // GET: DetallePerdida/Edit/5
         public async Task<IActionResult> Edit(int? id)
