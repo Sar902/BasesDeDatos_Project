@@ -192,7 +192,7 @@ public async Task<IActionResult> DeleteConfirmed(int id)
     await _context.SaveChangesAsync();
 
     return RedirectToAction(nameof(Index));
-}
+    }
 
 
         private bool ProductoExists(int id)

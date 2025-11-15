@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoSistemaInventarioNuevo.Models;
 
@@ -18,152 +15,143 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-     // GET: Categoria
-      public async Task<IActionResult> Index()
-     {
-     var categorias = await _context.Categoria
-                                   .AsNoTracking()
-                                   .ToListAsync();
-     return View(categorias);
-     }
-
+        // GET: Categoria
+        public async Task<IActionResult> Index()
+        {
+            var categorias = await _context.Categoria
+                                           .OrderBy(c => c.Nombre)
+                                           .AsNoTracking()
+                                           .ToListAsync();
+            return View(categorias);
+        }
 
         // GET: Categoria/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var categorium = await _context.Categoria
-                .FirstOrDefaultAsync(m => m.IdCategoria == id);
-            if (categorium == null)
-            {
-                return NotFound();
-            }
+            var categoria = await _context.Categoria
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.IdCategoria == id);
 
-            return View(categorium);
+            if (categoria == null) return NotFound();
+
+            return View(categoria);
         }
 
         // GET: Categoria/Create
         public IActionResult Create()
         {
-            return View();
+            return View(new Categorium());
         }
 
         // POST: Categoria/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre,PorcentajeGanancia,Estado")] Categorium categorium)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(categorium);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(categorium);
-        }
+      [HttpPost]
+[ValidateAntiForgeryToken]
+
+public async Task<IActionResult> Create([Bind("Nombre,PorcentajeGanancia")] Categorium categoria)
+{
+    if (!ModelState.IsValid) return View(categoria);
+
+    // Validar duplicados
+    bool existe = await _context.Categoria.AnyAsync(c => c.Nombre == categoria.Nombre);
+    if (existe)
+    {
+        ModelState.AddModelError("Nombre", "Ya existe una categoría con este nombre.");
+        return View(categoria);
+    }
+
+    categoria.Estado = "Activo"; // Valor por defecto
+    _context.Add(categoria);      // EF Core generará IdCategoria automáticamente
+    await _context.SaveChangesAsync();
+
+    return RedirectToAction(nameof(Index));
+}
+
+
 
         // GET: Categoria/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var categorium = await _context.Categoria.FindAsync(id);
-            if (categorium == null)
-            {
-                return NotFound();
-            }
-            return View(categorium);
+            var categoria = await _context.Categoria.FindAsync(id);
+            if (categoria == null) return NotFound();
+
+            return View(categoria);
         }
 
         // POST: Categoria/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdCategoria,Nombre,PorcentajeGanancia,Estado")] Categorium categorium)
+        public async Task<IActionResult> Edit(int id, [Bind("IdCategoria,Nombre,PorcentajeGanancia,Estado")] Categorium categoria)
         {
-            if (id != categorium.IdCategoria)
+            if (id != categoria.IdCategoria) return NotFound();
+
+            if (!ModelState.IsValid) return View(categoria);
+
+            // Validar duplicados (excepto esta categoría)
+            bool existe = await _context.Categoria
+                                        .AnyAsync(c => c.Nombre == categoria.Nombre && c.IdCategoria != id);
+            if (existe)
             {
-                return NotFound();
+                ModelState.AddModelError("Nombre", "Ya existe otra categoría con este nombre.");
+                return View(categoria);
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(categorium);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!CategoriumExists(categorium.IdCategoria))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                _context.Update(categoria);
+                await _context.SaveChangesAsync();
             }
-            return View(categorium);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!CategoriaExists(categoria.IdCategoria)) return NotFound();
+                else throw;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Categoria/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var categorium = await _context.Categoria
-                .FirstOrDefaultAsync(m => m.IdCategoria == id);
-            if (categorium == null)
-            {
-                return NotFound();
-            }
+            var categoria = await _context.Categoria
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.IdCategoria == id);
 
-            return View(categorium);
+            if (categoria == null) return NotFound();
+
+            return View(categoria);
         }
 
         // POST: Categoria/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-     public async Task<IActionResult> DeleteConfirmed(int id)
-    {
-    var categorium = await _context.Categoria.FindAsync(id);
-    if (categorium == null)
-    {
-        return NotFound();
-    }
-
-    // VALIDACIÓN: revisar si tiene productos relacionados
-    var tieneProductos = _context.Producto.Any(p => p.IdCategoria == id);
-    if (tieneProductos)
-    {
-        ModelState.AddModelError("", "No se puede eliminar esta categoría porque tiene productos relacionados.");
-        return View(categorium); 
-    }
-
-    _context.Categoria.Remove(categorium);
-    await _context.SaveChangesAsync();
-    return RedirectToAction(nameof(Index));
-}
-
-        private bool CategoriumExists(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            return _context.Categoria.Any(e => e.IdCategoria == id);
+            var categoria = await _context.Categoria.FindAsync(id);
+            if (categoria == null) return NotFound();
+
+            // Validación: no eliminar si tiene productos relacionados
+            bool tieneProductos = await _context.Producto
+                                                .AnyAsync(p => p.IdCategoria == id);
+            if (tieneProductos)
+            {
+                ModelState.AddModelError("", "No se puede eliminar esta categoría porque tiene productos relacionados.");
+                return View(categoria);
+            }
+
+            _context.Categoria.Remove(categoria);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool CategoriaExists(int id)
+        {
+            return _context.Categoria.Any(c => c.IdCategoria == id);
         }
     }
 }

@@ -28,10 +28,12 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         .ToListAsync();
 
     // Productos con inventario bajo
-    var inventarioBajo = await _context.Inventario
-        .Include(i => i.IdProductoNavigation)
-        .Where(i => i.CantidadDisponible <= 10)
-        .ToListAsync();
+   var inventarioBajo = await _context.Inventario
+    .Include(i => i.IdProductoNavigation)
+    .Where(i => i.CantidadDisponible < 10
+                && i.IdProductoNavigation != null
+                && i.IdProductoNavigation.Estado == "Activo")
+    .ToListAsync();
 
     // Ventas del mes
     var ventasMes = await _context.Venta

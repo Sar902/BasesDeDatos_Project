@@ -19,10 +19,15 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // GET: Proveedor
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.Proveedor.ToListAsync());
-        }
+      public async Task<IActionResult> Index()
+{
+    ViewBag.ProveedoresActivos = await _context.Proveedor
+        .CountAsync(p => p.Estado == "Activo");
+
+    var listaProveedores = await _context.Proveedor.ToListAsync();
+    return View(listaProveedores);
+}
+
 
         // GET: Proveedor/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -89,6 +94,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         {
             if (id != proveedor.IdProveedor)
             {
+            
                 return NotFound();
             }
 

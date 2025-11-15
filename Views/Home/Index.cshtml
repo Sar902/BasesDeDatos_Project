@@ -1,12 +1,13 @@
 ﻿@{
-    ViewData["Title"] = "Panel Principal";
+    ViewData["Title"] = "Sistema de ventas";
 }
 
-<div class="d-flex" id="wrapper">
+<div id="wrapper" class="d-flex">
 
     <!-- SIDEBAR -->
     <nav id="sidebar-wrapper">
-        <div class="sidebar-heading text-center py-4 fw-bold fs-4">Sistema de Ventas</div>
+    
+      <div class="sidebar-heading text-center py-4 fw-bold fs-4">Sistema de Ventas</div>
         <ul class="list-group list-group-flush">
             <li><a asp-controller="Producto" asp-action="Index" class="list-group-item">Productos</a></li>
             <li><a asp-controller="Categoria" asp-action="Index" class="list-group-item">Categorías</a></li>
@@ -15,58 +16,83 @@
             <li><a asp-controller="DetalleVenta" asp-action="Index" class="list-group-item">Detalle venta</a></li>
             <li><a asp-controller="Proveedor" asp-action="Index" class="list-group-item">Proveedores</a></li>
             <li><a asp-controller="Perdida" asp-action="Index" class="list-group-item">Pérdidas</a></li>
-              <li><a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item">Detalle Pérdidas</a></li>
+            <li><a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item">Detalle Pérdidas</a></li>
             <li><a asp-controller="SolicitudDevolucion" asp-action="Index" class="list-group-item">Devoluciones</a></li>
             <li><a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="list-group-item">Detalle devoluciones</a></li>
-            
+
+            <!-- Botón modo oscuro dentro del sidebar -->
+               <li><button id="darkModeToggle" class="btn-sidebar mt-3">🌙 Modo Oscuro</button></li>
         </ul>
     </nav>
-
+    <button id="menu-toggle" class="btn btn-sidebar">☰</button>
     <!-- CONTENIDO PRINCIPAL -->
-   <div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card text-center p-4">
-            <h6>Total Productos</h6>
-            <p class="display-6 fw-bold">@ViewBag.TotalProductos</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center p-4">
-            <h6>Total Ventas</h6>
-            <p class="display-6 fw-bold">$@ViewBag.TotalVentas</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center p-4">
-            <h6>Pérdidas del mes</h6>
-            <p class="display-6 fw-bold">@ViewBag.PerdidasMes</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center p-4">
-            <h6>Proveedores activos</h6>
-            <p class="display-6 fw-bold">@ViewBag.ProveedoresActivos</p>
-        </div>
-    </div>
-</div>
+    <div id="page-content-wrapper">
 
-<div class="card inventario-bajo p-3">
-<h5 class="mt-5">Productos con inventario bajo</h5>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Producto</th>
-            <th>Stock disponible</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach(var item in ViewBag.InventarioBajo)
-        {
-            <tr>
-                <td>@item.IdProductoNavigation.Nombre</td>
-                <td>@item.CantidadDisponible</td>
-            </tr>
-        }
-    </tbody>
-</table>
-</div>
+        <!-- Dashboard Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6 col-md-3">
+                <div class="card dashboard-box text-center p-3">
+                  <i class="bi bi-box-seam display-4 mb-2"></i>
+                    <h6>Total Productos</h6>
+                    <p class="fw-bold">@ViewBag.TotalProductos</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="card dashboard-box text-center p-3">
+                 <i class="bi bi-currency-dollar display-4 mb-2"></i>
+                    <h6>Total Ventas</h6>
+                    <p class="fw-bold">$@ViewBag.TotalVentas</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="card dashboard-box text-center p-3">
+                <i class="bi bi-exclamation-triangle display-4 mb-2"></i>
+                    <h6>Pérdidas del mes</h6>
+                    <p class="fw-bold">@ViewBag.PerdidasMes</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="card dashboard-box text-center p-3">
+                 <i class="bi bi-people display-4 mb-2"></i>
+                    <h6>Proveedores activos</h6>
+                    <p class="fw-bold">@ViewBag.ProveedoresActivosCount</p>
+                </div>
+            </div>
+        </div>
+<!-- Tabla inventario bajo -->
+ <div class="card inventario-bajo p-3 mt-4"> 
+ <h5 class="mb-3">Productos con inventario bajo</h5> 
+ <div class="table-responsive"> <table class="table table-hover align-middle"> 
+ <thead class="table-light rounded-top"> 
+ <tr> <th>Producto</th> 
+ <th>Stock disponible</th> 
+ </tr> 
+ </thead>
+  <tbody> @foreach (var item in ViewBag.InventarioBajo)
+   { <tr class="@((item.CantidadDisponible < 5) ? "table-danger" : "")"> 
+   <td>@item.IdProductoNavigation.Nombre</td> <td>@item.CantidadDisponible</td> </tr> } 
+   </tbody>
+    </table>
+     </div> 
+     </div>
+
+
+    </div> <!-- /page-content-wrapper -->
+</div> <!-- /wrapper -->
+
+<!-- Scripts -->
+<script>
+    // Toggle sidebar
+    const toggleBtnMenu = document.getElementById('menu-toggle');
+    const wrapper = document.getElementById('wrapper');
+    toggleBtnMenu.addEventListener('click', () => {
+        wrapper.classList.toggle('toggled');
+    });
+
+    // Dark mode
+    const toggleBtnDark = document.getElementById('darkModeToggle');
+    toggleBtnDark.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        toggleBtnDark.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+    });
+</script>

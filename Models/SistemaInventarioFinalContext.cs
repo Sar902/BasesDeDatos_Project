@@ -37,14 +37,23 @@ public partial class SistemaInventarioFinalContext : DbContext
    protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     // Categoría
-    modelBuilder.Entity<Categorium>(entity =>
-    {
-        entity.HasKey(e => e.IdCategoria);
-        entity.ToTable("Categoria");
-        entity.Property(e => e.Nombre).HasMaxLength(100).IsUnicode(false);
-        entity.Property(e => e.Estado).HasMaxLength(20).IsUnicode(false).HasDefaultValue("Activo");
-        entity.Property(e => e.PorcentajeGanancia).HasColumnType("decimal(5, 2)");
-    });
+   modelBuilder.Entity<Categorium>(entity =>
+{
+    entity.HasKey(e => e.IdCategoria); // Definir PK primero
+    entity.Property(e => e.IdCategoria).ValueGeneratedOnAdd(); // ID autogenerado
+
+    entity.ToTable("Categoria");
+    entity.Property(e => e.Nombre)
+          .HasMaxLength(100)
+          .IsUnicode(false);
+    entity.Property(e => e.Estado)
+          .HasMaxLength(20)
+          .IsUnicode(false)
+          .HasDefaultValue("Activo");
+    entity.Property(e => e.PorcentajeGanancia)
+          .HasColumnType("decimal(5,2)");
+});
+
 
     // Inventario
     modelBuilder.Entity<Inventario>(entity =>

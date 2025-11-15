@@ -8,12 +8,17 @@ public partial class Categorium
 {
     public int IdCategoria { get; set; }
 
-    public string Nombre { get; set; } = null!;
+[Required(ErrorMessage = "El nombre es obligatorio")]
+public string Nombre { get; set; } = null!;
 
-    [Display(Name = "Porcentaje de Ganancia")]
-    public decimal PorcentajeGanancia { get; set; }
+[Required(ErrorMessage = "El porcentaje de ganancia es obligatorio")]
+[Display(Name = "Porcentaje de Ganancia")]
+public decimal PorcentajeGanancia { get; set; }
 
-    public string Estado { get; set; } = null!;
+
+
+  public string Estado { get; set; } = "Activo";
+
 
 
     public virtual ICollection<Producto> Producto { get; set; } = new List<Producto>();

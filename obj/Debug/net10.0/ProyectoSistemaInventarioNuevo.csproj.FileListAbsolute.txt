@@ -781,4 +781,4 @@ C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\refint\ProyectoSistemaIn
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.pdb
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.genruntimeconfig.cache
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ref\ProyectoSistemaInventarioNuevo.dll
-C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-he7c569627-he7c569627.gz
+C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-04p0zjiz5f-04p0zjiz5f.gz
