@@ -95,7 +95,7 @@
                 if (productoId) {
                     $.get('/Venta/GetProductoDetails', { id: productoId }, function (data) {
                         // Mostramos el precio con COMA
-                        $('#input-precio').val(data.precioVenta.toFixed(2).replace('.', ',')); // <-- CAMBIO
+                        $('#input-precio').val(data.precioVenta.toFixed(2).replace('.', ','));
                     }).fail(function() {
                         alert('Error al obtener los detalles del producto.');
                     });
@@ -109,7 +109,7 @@
                 var productoId = $('#select-producto').val();
                 var cantidad = parseInt($('#input-cantidad').val());
                 // Leemos el valor con COMA y lo convertimos a número (con punto)
-                var precio = parseFloat($('#input-precio').val().replace(',', '.')); // <-- CAMBIO
+                var precio = parseFloat($('#input-precio').val().replace(',', '.')); 
                 var nombre = $('#select-producto option:selected').text();
 
                 // Validaciones

@@ -1,47 +1,27 @@
-@model ProyectoSistemaInventarioNuevo.Models.Producto
+@model ProyectoSistemaInventarioNuevo.Models.VProducto
+@{ Layout = null; } 
 
-@{
-    ViewData["Title"] = "Eliminar Producto";
-}
-
-<h1>Eliminar Producto</h1>
-<hr />
-
-<!-- ALERTA BONITA -->
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-        {
-            <div>@error.ErrorMessage</div>
-        }
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-<div>
-    <h4>Producto</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.IdCategoria)</dt>
-        <dd class="col-sm-10">
-            @(Model.IdCategoriaNavigation != null ? Model.IdCategoriaNavigation.Nombre : "")
-        </dd>
-
-        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Nombre)</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.Nombre)</dd>
-
-        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Cantidad)</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.Cantidad)</dd>
-
-        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Estado)</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.Estado)</dd>
-    </dl>
-
-    <form asp-action="Delete" method="post">
-    <input type="hidden" asp-for="IdProducto" />
-    <button type="submit" class="btn btn-danger">Eliminar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>
-
+<div class="modal-header">
+    <h5 class="modal-title">Confirmar Eliminación</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
+
+<form asp-action="Delete"
+      hx-post="@Url.Action("Delete", new { id = Model.IdProducto })"
+      hx-target="this" 
+      hx-swap="outerHTML">
+    
+    @Html.AntiForgeryToken()
+    
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="IdProducto" />
+        
+        <p>¿Está seguro de que desea eliminar el producto: <strong>@Model.Nombre</strong>?</p>
+        <p class="text-danger">Esta acción no se puede deshacer.</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+    </div>
+</form>

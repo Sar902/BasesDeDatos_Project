@@ -1,69 +1,77 @@
 @model ProyectoSistemaInventarioNuevo.Models.Inventario
+@{ Layout = null; }
+
+<form asp-action="Edit"
+      hx-post="@Url.Action("Edit", new { id = Model.IdInventario })"
+      hx-target="this"
+      hx-swap="outerHTML">
+      
+    @Html.AntiForgeryToken()
+      
+    <div class="modal-header">
+        <h5 class="modal-title">Editar Lote</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="IdInventario" />
+        
+        <div class="form-group">
+            <label asp-for="IdProducto" class="control-label">Producto</label>
+            <select asp-for="IdProducto" class ="form-control" asp-items="ViewBag.IdProducto"></select>
+            <span asp-validation-for="IdProducto" class="text-danger"></span>
+        </div>
+        
+        <div class="form-group">
+            <label asp-for="IdProveedor" class="control-label">Proveedor</label>
+            <select asp-for="IdProveedor" class ="form-control" asp-items="ViewBag.IdProveedor"></select>
+            <span asp-validation-for="IdProveedor" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Cantidad" class="control-label">Cantidad Total del Lote</label>
+            <input asp-for="Cantidad" class="form-control" type="number" />
+            <span asp-validation-for="Cantidad" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="CantidadDisponible" class="control-label">Cantidad Disponible</label>
+            <input asp-for="CantidadDisponible" class="form-control" type="number" />
+            <span asp-validation-for="CantidadDisponible" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="PrecioCompra" class="control-label">Precio Compra</label>
+            <input asp-for="PrecioCompra" class="form-control" />
+            <span asp-validation-for="PrecioCompra" class="text-danger"></span>
+        </div>
+        
+        <div class="form-group">
+            <label asp-for="FechaEntrada" class="control-label"></label>
+            <input asp-for="FechaEntrada" class="form-control" type="date" />
+            <span asp-validation-for="FechaEntrada" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="FechaSalida" class="control-label"></label>
+            <input asp-for="FechaSalida" class="form-control" type="date" />
+            <span asp-validation-for="FechaSalida" class="text-danger"></span>
+        </div>
+        
+        <div class="form-group">
+            <label asp-for="Estado" class="control-label"></label>
+            <input asp-for="Estado" class="form-control" />
+            <span asp-validation-for="Estado" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </div>
+</form>
 
 @{
-    ViewData["Title"] = "Edit";
-}
-
-<h1>Edit</h1>
-
-<h4>Inventario</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="IdInventario" />
-            <div class="form-group">
-                <label asp-for="IdProducto" class="control-label"></label>
-                <input asp-for="IdProducto" class="form-control" />
-                <span asp-validation-for="IdProducto" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdProveedor" class="control-label"></label>
-                <input asp-for="IdProveedor" class="form-control" />
-                <span asp-validation-for="IdProveedor" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Cantidad" class="control-label"></label>
-                <input asp-for="Cantidad" class="form-control" />
-                <span asp-validation-for="Cantidad" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CantidadDisponible" class="control-label"></label>
-                <input asp-for="CantidadDisponible" class="form-control" />
-                <span asp-validation-for="CantidadDisponible" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PrecioCompra" class="control-label"></label>
-                <input asp-for="PrecioCompra" class="form-control" />
-                <span asp-validation-for="PrecioCompra" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FechaEntrada" class="control-label"></label>
-                <input asp-for="FechaEntrada" class="form-control" />
-                <span asp-validation-for="FechaEntrada" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FechaSalida" class="control-label"></label>
-                <input asp-for="FechaSalida" class="form-control" />
-                <span asp-validation-for="FechaSalida" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Estado" class="control-label"></label>
-                <input asp-for="Estado" class="form-control" />
-                <span asp-validation-for="Estado" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
 }

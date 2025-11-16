@@ -1,41 +1,30 @@
-@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Ventum>
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Ventas";
 }
 
-<h1>Venta</h1>
+<h1>Listado de Ventas</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a class="btn btn-primary" asp-action="Create">
+        <i class="bi bi-plus-circle"></i> Registrar Nueva Venta
+    </a>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Fecha)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Total)
-            </th>
+            <th>ID Venta</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Ganancia Total</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Fecha)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Total)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdVenta">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdVenta">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdVenta">Delete</a>
-            </td>
-        </tr>
-}
+    <tbody id="venta-tbody"
+           hx-get="@Url.Action("GetVentaList")"
+           hx-trigger="load, refreshVentaList from:body"
+           hx-swap="innerHTML">
+           
+           <tr><td colspan="5">Cargando ventas...</td></tr>
     </tbody>
 </table>

@@ -10,8 +10,29 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ProyectoSistemaInventarioNuevo.styles.css" asp-append-version="true" />
+    
+    <!-- Añadido Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body>
+
+<!-- 
+    Añadido 'x-data' y 'x-init' a la etiqueta <body>.
+    'x-init' contiene el nuevo script (sin jQuery) que reemplaza puntos por comas.
+-->
+<body x-data x-init="
+    // Intercepta todos los envíos de formularios a nivel global
+    window.addEventListener('submit', event => {
+        
+        // 'event.target' es el formulario que se está enviando
+        // Usamos querySelectorAll (JS moderno) en lugar de $(this).find()
+        event.target.querySelectorAll('input[data-val-number]').forEach(input => {
+            if (input.value) {
+                // Reemplazamos el punto por la coma
+                input.value = input.value.replace('.', ',');
+            }
+        });
+    })
+">
  <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
@@ -44,8 +65,48 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Añadido HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+    <div id="modal-generic" class="modal fade" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg"> <!-- modal-lg para más espacio -->
+            <div id="modal-content-generic" class="modal-content">
+                <!-- El contenido (formulario) se cargará aquí por HTMX -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Variable para instanciar el modal de Bootstrap
+            let modalInstance = null;
+            const modalElement = document.getElementById('modal-generic');
+
+            // Cuando HTMX carga contenido en nuestro contenedor...
+            htmx.on('#modal-content-generic', 'htmx:afterSwap', (e) => {
+                // ...mostramos el modal.
+                if (!modalInstance) {
+                    modalInstance = new bootstrap.Modal(modalElement);
+                }
+                modalInstance.show();
+            });
+
+            // Escuchamos un evento personalizado "htmx:closeModal" que enviaremos desde el servidor
+            htmx.on('htmx:closeModal', () => {
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            });
+            
+            // Limpiar el contenido del modal cuando se oculta para evitar data "vieja"
+            modalElement.addEventListener('hidden.bs.modal', event => {
+              htmx.find('#modal-content-generic').innerHTML = "";
+            })
+        })();
+    </script>
 </body>
 </html>
-

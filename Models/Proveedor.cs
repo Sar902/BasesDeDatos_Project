@@ -11,7 +11,7 @@ public partial class Proveedor
 
     public string? Contacto { get; set; }
 
-    public string Estado { get; set; } = null!;
+    public string? Estado { get; set; }
 
     public virtual ICollection<Inventario> Inventario { get; set; } = new List<Inventario>();
     
