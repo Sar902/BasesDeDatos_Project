@@ -19,10 +19,25 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
+        // Función helper para saber si es petición HTMX
+        private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
+
         // GET: Venta
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Venta.ToListAsync());
+            return View();
+        }
+
+        // NUEVA ACCIÓN: Devuelve la lista de ventas (VVentum)
+        [HttpGet]
+        public async Task<IActionResult> GetVentaList()
+        {
+            // Usamos VVentum para el listado, ya que tiene los totales.
+            var ventas = await _context.VVentum
+                                        .AsNoTracking()
+                                        .OrderByDescending(v => v.Fecha)
+                                        .ToListAsync();
+            return PartialView("_VentaList", ventas);
         }
 
         // GET: Venta/Details/5
@@ -35,6 +50,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
 
             // 1. Buscamos la venta maestra (usando VVentum)
             var venta = await _context.VVentum
+                .AsNoTracking() // AÑADIDO: AsNoTracking para vistas de solo lectura
                 .FirstOrDefaultAsync(m => m.IdVenta == id);
 
             if (venta == null)
@@ -45,6 +61,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             // 2. Buscamos los detalles (usando VDetalleVentum)
             var detallesDb = await _context.VDetalleVentum
                 .Where(d => d.IdVenta == id)
+                .AsNoTracking() // AÑADIDO
                 .ToListAsync();
 
             // 3. Obtenemos los IDs de los productos de esos detalles
@@ -53,7 +70,8 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             // 4. Buscamos TODOS los productos necesarios en UNA sola consulta
             var productos = await _context.Producto
                 .Where(p => productoIds.Contains(p.IdProducto))
-                .ToListAsync(); //
+                .AsNoTracking() // AÑADIDO
+                .ToListAsync(); 
 
             // 5. Unimos las dos listas (detalles + productos) usando LINQ en C#
             var detallesVm = (from d in detallesDb
@@ -74,11 +92,18 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                 Detalles = detallesVm // Asignamos nuestra lista "unida"
             };
 
+            if (IsHtmxRequest())
+            {
+                // Si es HTMX, devolvemos el modal
+                return PartialView("Details", viewModel);
+            }
+
             return View(viewModel);
         }
 
+
         // GET: Venta/Create
-            public IActionResult Create()
+        public IActionResult Create()
         {
             // Creamos el ViewModel vacío
             var viewModel = new VentaViewModel();
@@ -91,11 +116,6 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             return View(viewModel); // Pasamos el ViewModel a la vista
         }
 
-        // POST: Venta/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        // POST: Venta/Create
-        // POST: Venta/Create
         // POST: Venta/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -141,18 +161,14 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                             }
                             producto.Cantidad -= item.Cantidad; // Descontamos el stock MAESTRO
 
-                            // === INICIO DE LA MEJORA ===
-                            // ¡Mae, aquí está su lógica!
                             // Si el stock maestro llega a 0, lo inactivamos.
                             if (producto.Cantidad == 0)
                             {
                                 producto.Estado = "Inactivo";
                             }
-                            // === FIN DE LA MEJORA ===
 
                             _context.Update(producto);
 
-                            // --- INICIO DE LA CIRUGÍA (Paso 5: Lógica FIFO) ---
 
                             int cantidadAVender = item.Cantidad; // Cantidad que necesitamos despachar
 
@@ -199,8 +215,6 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                                 throw new Exception($"Inconsistencia de datos. El stock total de {producto.Nombre} es {producto.Cantidad}, pero los lotes de inventario no suman esa cantidad.");
                             }
                             
-                            // --- FIN DE LA CIRUGÍA (Paso 5) ---
-
 
                             // 6. Crear el DetalleVentum
                             var vProducto = await _context.VProducto.FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
@@ -237,6 +251,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             return View(viewModel);
         }
 
+
         // GET: Venta/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -254,8 +269,6 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // POST: Venta/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("IdVenta,Fecha,Total")] Ventum ventum)
@@ -289,6 +302,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // GET: Venta/Delete/5
+        // MODIFICADO: Devuelve VVentum y es compatible con modal
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -296,28 +310,57 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                 return NotFound();
             }
 
-            var ventum = await _context.Venta
+            // Usamos VVentum para mostrar la confirmación
+            var ventum = await _context.VVentum
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.IdVenta == id);
+                
             if (ventum == null)
             {
                 return NotFound();
             }
 
+            if (IsHtmxRequest())
+            {
+                return PartialView("Delete", ventum);
+            }
             return View(ventum);
         }
 
         // POST: Venta/Delete/5
+        // MODIFICADO: Añadida validación de dependencias y respuesta HTMX
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            // MEJORA DE SEGURIDAD: Validar dependencias
+            bool tieneDetalles = await _context.DetalleVenta.AnyAsync(d => d.IdVenta == id);
+            if (tieneDetalles)
+            {
+                ModelState.AddModelError("", "No se puede eliminar una venta que tiene productos (detalles) asociados. Considere anular la venta.");
+                
+                var ventumParaError = await _context.VVentum
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.IdVenta == id);
+                    
+                // Devolvemos el modal con el error
+                return PartialView("Delete", ventumParaError);
+            }
+
             var ventum = await _context.Venta.FindAsync(id);
             if (ventum != null)
             {
                 _context.Venta.Remove(ventum);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
+            // Respuesta HTMX
+            if (IsHtmxRequest())
+            {
+                Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshVentaList");
+                return Content("", "text/html");
+            }
+            
             return RedirectToAction(nameof(Index));
         }
 

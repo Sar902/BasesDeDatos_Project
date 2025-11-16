@@ -18,202 +18,322 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-        // GET: Inventario
-        public async Task<IActionResult> Index()
+        // =====================================================================
+        //                         SECCIÓN HTMX
+        // =====================================================================
+
+        // Helper para detectar si la petición viene desde HTMX
+        // Esto permite devolver vistas parciales en lugar del layout completo.
+        private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
+
+        // Load automático de dropdowns (Producto y Proveedor).
+        // Se usa en Create y Edit.
+        private async Task PopulateDropdowns(Inventario inventario = null)
         {
-            // Incluimos los nombres para mostrar en la lista
-            var sistemaInventarioFinalContext = _context.Inventario
-                .Include(i => i.IdProductoNavigation)
-                .Include(i => i.IdProveedorNavigation);
-            return View(await sistemaInventarioFinalContext.ToListAsync());
+            if (inventario == null)
+            {
+                // Para formularios nuevos
+                ViewData["IdProducto"] = new SelectList(
+                    await _context.VProducto.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(),
+                    "IdProducto", "Nombre"
+                );
+                ViewData["IdProveedor"] = new SelectList(
+                    await _context.Proveedor.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(),
+                    "IdProveedor", "Nombre"
+                );
+            }
+            else
+            {
+                // Para edición (con valores seleccionados)
+                ViewData["IdProducto"] = new SelectList(
+                    await _context.VProducto.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(),
+                    "IdProducto", "Nombre", inventario.IdProducto
+                );
+                ViewData["IdProveedor"] = new SelectList(
+                    await _context.Proveedor.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(),
+                    "IdProveedor", "Nombre", inventario.IdProveedor
+                );
+            }
         }
 
-        // GET: Inventario/Details/5
+        // =====================================================================
+        // RE-CALCULAR STOCK MAESTRO DEL PRODUCTO
+        // =====================================================================
+
+        // Esta función recalcula el stock total del producto tomando
+        // la suma de la CantidadDisponible de todos sus lotes.
+        private async Task RecalculateMasterStock(int idProducto)
+        {
+            var producto = await _context.Producto.FindAsync(idProducto);
+            if (producto == null) return;
+
+            // Suma total del inventario disponible en los lotes del producto
+            var nuevoStockMaestro = await _context.Inventario
+                .Where(i => i.IdProducto == idProducto)
+                .SumAsync(i => i.CantidadDisponible);
+
+            // Actualiza la entidad Producto
+            producto.Cantidad = nuevoStockMaestro;
+            producto.Estado = (producto.Cantidad > 0) ? "Activo" : "Inactivo";
+
+            _context.Update(producto);
+            await _context.SaveChangesAsync(); // Guardamos los cambios
+        }
+
+        // =====================================================================
+        // INDEX GENERAL
+        // =====================================================================
+
+        // Página principal: solo carga la carcasa del frontend.
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        // Endpoint que HTMX usa para cargar la tabla del inventario.
+        [HttpGet]
+        public async Task<IActionResult> GetInventarioList()
+        {
+            var inventario = await _context.Inventario
+                .Include(i => i.IdProductoNavigation)
+                .Include(i => i.IdProveedorNavigation)
+                .AsNoTracking()
+                .OrderByDescending(i => i.FechaEntrada)
+                .ToListAsync();
+
+            return PartialView("_InventarioList", inventario);
+        }
+
+        // =====================================================================
+        // DETALLES
+        // =====================================================================
+
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var inventario = await _context.Inventario
                 .Include(i => i.IdProductoNavigation)
                 .Include(i => i.IdProveedorNavigation)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.IdInventario == id);
-            if (inventario == null)
-            {
-                return NotFound();
-            }
 
-            return View(inventario);
+            if (inventario == null) return NotFound();
+
+            return IsHtmxRequest()
+                ? PartialView("Details", inventario)
+                : View(inventario);
         }
 
-        // GET: Inventario/Create
-        // --- MÉTODO MODIFICADO ---
-        public IActionResult Create()
+        // =====================================================================
+        // CREATE
+        // =====================================================================
+
+        public async Task<IActionResult> Create()
         {
-            // Cargar listas para los dropdowns
-            // Usamos 'VProducto' que es más ligero si solo queremos Id y Nombre
-            ViewData["IdProducto"] = new SelectList(_context.VProducto, "IdProducto", "Nombre");
-            ViewData["IdProveedor"] = new SelectList(_context.Proveedor, "IdProveedor", "Nombre"); // Asumo que Proveedor tiene "Nombre"
+            await PopulateDropdowns(); // Cargar selects
+
+            if (IsHtmxRequest())
+            {
+                return PartialView("Create", new Inventario { FechaEntrada = DateTime.Today });
+            }
+
             return View();
         }
 
-        // POST: Inventario/Create
-        // --- MÉTODO REEMPLAZADO CON LÓGICA DE NEGOCIO ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("IdProducto,IdProveedor,Cantidad,PrecioCompra,FechaEntrada")] Inventario inventario)
         {
-            // Quitamos 'CantidadDisponible', 'FechaSalida', 'Estado' del Bind
-            
             if (ModelState.IsValid)
             {
-                // Usamos una transacción
+                // Transacción para evitar inconsistencias
                 using (var transaction = _context.Database.BeginTransaction())
                 {
                     try
                     {
-                        // 1. Configurar el nuevo lote
-                        inventario.CantidadDisponible = inventario.Cantidad; // Lógica clave
-                        inventario.Estado = "EnExistencia"; // Estado por defecto
-                        inventario.FechaSalida = null; // Aún no ha salido
+                        // 1. Definir datos del nuevo lote
+                        inventario.CantidadDisponible = inventario.Cantidad;
+                        inventario.Estado = "EnExistencia";
+                        inventario.FechaSalida = null;
 
                         _context.Add(inventario);
-                        await _context.SaveChangesAsync(); // Guardar el lote
+                        await _context.SaveChangesAsync(); // Guardamos el lote
 
-                        // 2. Buscar el producto maestro
-                        var producto = await _context.Producto.FindAsync(inventario.IdProducto);
-                        if (producto == null)
-                        {
-                            throw new Exception("El producto seleccionado no existe.");
-                        }
+                        // 2. Actualizar stock maestro del producto
+                        await RecalculateMasterStock(inventario.IdProducto);
 
-                       // 3. Sumar al stock maestro
-                        producto.Cantidad += inventario.Cantidad;
-
-                        // === INICIO DE LA MEJORA ===
-                        // Si el producto estaba 'Inactivo' (stock 0) y le metimos stock,
-                        // lo volvemos a poner 'Activo'.
-                        if (producto.Cantidad > 0 && producto.Estado == "Inactivo")
-                        {
-                            producto.Estado = "Activo";
-                        }
-                        // === FIN DE LA MEJORA ===
-
-                        _context.Update(producto);
-                        await _context.SaveChangesAsync(); // Guardar el producto
-                        
-                        // 4. Confirmar transacción
                         await transaction.CommitAsync();
-                        
-                        return RedirectToAction(nameof(Index));
+
+                        // Cierra modal y recarga la tabla
+                        Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshInventarioList");
+                        return Content("", "text/html");
                     }
                     catch (Exception ex)
                     {
-                        // 5. Revertir si algo falla
                         await transaction.RollbackAsync();
                         ModelState.AddModelError("", $"Error al guardar: {ex.Message}");
                     }
                 }
             }
-            
-            // Si el modelo no es válido, recargar dropdowns
-            ViewData["IdProducto"] = new SelectList(_context.VProducto, "IdProducto", "Nombre", inventario.IdProducto);
-            ViewData["IdProveedor"] = new SelectList(_context.Proveedor, "IdProveedor", "Nombre", inventario.IdProveedor);
-            return View(inventario);
+
+            // Si hay errores, recargar dropdowns y devolver formulario
+            await PopulateDropdowns(inventario);
+            return PartialView("Create", inventario);
         }
 
-        // GET: Inventario/Edit/5
-        // (Dejamos Edit y Delete como estaban por ahora, aunque 'Edit' necesitaría 
-        // una lógica más compleja para recalcular el stock maestro si se cambia la cantidad)
+        // =====================================================================
+        // EDIT
+        // =====================================================================
+
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var inventario = await _context.Inventario.FindAsync(id);
-            if (inventario == null)
-            {
-                return NotFound();
-            }
-            ViewData["IdProducto"] = new SelectList(_context.Producto, "IdProducto", "Nombre", inventario.IdProducto);
-            ViewData["IdProveedor"] = new SelectList(_context.Proveedor, "IdProveedor", "Nombre", inventario.IdProveedor);
-            return View(inventario);
+            if (inventario == null) return NotFound();
+
+            await PopulateDropdowns(inventario);
+
+            return IsHtmxRequest()
+                ? PartialView("Edit", inventario)
+                : View(inventario);
         }
 
-        // POST: Inventario/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("IdInventario,IdProducto,IdProveedor,Cantidad,CantidadDisponible,PrecioCompra,FechaEntrada,FechaSalida,Estado")] Inventario inventario)
         {
-            if (id != inventario.IdInventario)
-            {
-                return NotFound();
-            }
+            if (id != inventario.IdInventario) return NotFound();
 
             if (ModelState.IsValid)
             {
-                try
+                // Obtenemos el lote original antes de actualizar
+                var inventarioOriginal = await _context.Inventario
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.IdInventario == id);
+
+                if (inventarioOriginal == null) return NotFound();
+
+                // Validación: no permitir disponible > cantidad total
+                if (inventario.CantidadDisponible > inventario.Cantidad)
                 {
-                    _context.Update(inventario);
-                    await _context.SaveChangesAsync();
+                    ModelState.AddModelError("CantidadDisponible",
+                        "La cantidad disponible no puede ser mayor que la cantidad total del lote.");
                 }
-                catch (DbUpdateConcurrencyException)
+
+                if (!ModelState.IsValid)
                 {
-                    if (!InventarioExists(inventario.IdInventario))
+                    await PopulateDropdowns(inventario);
+                    return PartialView("Edit", inventario);
+                }
+
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
                     {
-                        return NotFound();
+                        _context.Update(inventario);
+                        await _context.SaveChangesAsync();
+
+                        // Recalcular stock maestro del nuevo producto
+                        await RecalculateMasterStock(inventario.IdProducto);
+
+                        // Si cambió el producto, recalcular también el anterior
+                        if (inventarioOriginal.IdProducto != inventario.IdProducto)
+                        {
+                            await RecalculateMasterStock(inventarioOriginal.IdProducto);
+                        }
+
+                        await transaction.CommitAsync();
+
+                        Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshInventarioList");
+                        return Content("", "text/html");
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        throw;
+                        await transaction.RollbackAsync();
+                        ModelState.AddModelError("", "Error al actualizar: " + ex.Message);
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
-            ViewData["IdProducto"] = new SelectList(_context.Producto, "IdProducto", "Nombre", inventario.IdProducto);
-            ViewData["IdProveedor"] = new SelectList(_context.Proveedor, "IdProveedor", "Nombre", inventario.IdProveedor);
-            return View(inventario);
+
+            await PopulateDropdowns(inventario);
+            return PartialView("Edit", inventario);
         }
 
-        // GET: Inventario/Delete/5
-        // (Borrar un lote de inventario también debería restar del stock maestro,
-        // pero lo dejaremos así por simplicidad por ahora)
+        // =====================================================================
+        // DELETE
+        // =====================================================================
+
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var inventario = await _context.Inventario
                 .Include(i => i.IdProductoNavigation)
                 .Include(i => i.IdProveedorNavigation)
-                .FirstOrDefaultAsync(m => m.IdInventario == id);
-            if (inventario == null)
-            {
-                return NotFound();
-            }
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.IdInventario == id);
 
-            return View(inventario);
+            if (inventario == null) return NotFound();
+
+            return IsHtmxRequest()
+                ? PartialView("Delete", inventario)
+                : View(inventario);
         }
 
-        // POST: Inventario/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var inventario = await _context.Inventario.FindAsync(id);
-            if (inventario != null)
+            if (inventario == null) return NotFound();
+
+            // Validación: no borrar si tiene solicitudes de devolución
+            bool tieneSolicitudes = await _context.SolicitudDevolucion
+                .AnyAsync(s => s.IdInventario == id);
+
+            if (tieneSolicitudes)
             {
-                _context.Inventario.Remove(inventario);
+                ModelState.AddModelError("", "No se puede borrar. Este lote tiene solicitudes de devolución asociadas.");
+                await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
+                await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
+                return PartialView("Delete", inventario);
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    int idProductoAfectado = inventario.IdProducto;
+
+                    _context.Inventario.Remove(inventario);
+                    await _context.SaveChangesAsync();  // El lote ya fue eliminado
+
+                    // Ahora recalculamos el stock maestro
+                    await RecalculateMasterStock(idProductoAfectado);
+
+                    await transaction.CommitAsync();
+
+                    if (IsHtmxRequest())
+                    {
+                        Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshInventarioList");
+                        return Content("", "text/html");
+                    }
+
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("", "Error al borrar: " + ex.Message);
+
+                    await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
+                    await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
+
+                    return PartialView("Delete", inventario);
+                }
+            }
         }
 
         private bool InventarioExists(int id)

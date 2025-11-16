@@ -1,47 +1,42 @@
-@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Categorium>
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Categorías";
 }
 
-<h1>Categoría</h1>
+<h1>Categorías</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <!-- 
+      Este botón ahora usa HTMX para cargar el formulario "Create"
+      dentro del contenedor del modal genérico que definimos en _Layout.
+    -->
+    <button class="btn btn-primary"
+            hx-get="@Url.Action("Create")"
+            hx-target="#modal-content-generic"
+            hx-swap="innerHTML">
+        <i class="bi bi-plus-circle"></i> Crear Nueva
+    </button>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Nombre)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PorcentajeGanancia)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Estado)
-            </th>
+            <th>Nombre</th>
+            <th>% Ganancia</th>
+            <th>Estado</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Nombre)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.PorcentajeGanancia)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Estado)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdCategoria">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdCategoria">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdCategoria">Delete</a>
-            </td>
-        </tr>
-}
+    <!--
+      Este <tbody> se cargará inicialmente Y se refrescará
+      cada vez que escuche el evento "refreshCategoriaList"
+      que disparamos desde el controlador.
+    -->
+    <tbody id="categoria-tbody"
+           hx-get="@Url.Action("GetCategoriaList")"
+           hx-trigger="load, refreshCategoriaList from:body"
+           hx-swap="innerHTML">
+           
+           <!-- Aquí se mostrará un indicador de carga -->
+           <tr><td colspan="4">Cargando...</td></tr>
     </tbody>
 </table>

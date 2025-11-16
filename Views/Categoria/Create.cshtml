@@ -1,25 +1,49 @@
 @model ProyectoSistemaInventarioNuevo.Models.Categorium
+@{ Layout = null; }
 
-<h4>Categoría</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-      <form asp-action="Create" method="post">
+<!-- 
+  Este formulario POSTeará al controlador.
+  hx-target="this" significa que si hay un error de validación,
+  el controlador devolverá este mismo formulario con los errores
+  y HTMX lo reemplazará en el modal.
+-->
+<form asp-action="Create"
+      hx-post="@Url.Action("Create")"
+      hx-target="this"
+      hx-swap="outerHTML">
+      
+    <div class="modal-header">
+        <h5 class="modal-title">Crear Categoría</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+        <!-- Div para mostrar validaciones -->
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
+        
         <div class="form-group">
-            <label asp-for="Nombre"></label>
+            <label asp-for="Nombre" class="control-label"></label>
             <input asp-for="Nombre" class="form-control" />
             <span asp-validation-for="Nombre" class="text-danger"></span>
         </div>
-
         <div class="form-group">
-            <label asp-for="PorcentajeGanancia"></label>
+            <label asp-for="PorcentajeGanancia" class="control-label"></label>
             <input asp-for="PorcentajeGanancia" class="form-control" />
             <span asp-validation-for="PorcentajeGanancia" class="text-danger"></span>
         </div>
-
-        <input type="submit" value="Create" class="btn btn-primary" />
-      </form>
+        <!-- El estado se asigna en el controlador, no se necesita aquí -->
     </div>
-</div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear</button>
+    </div>
+</form>
+
+<!-- 
+    Esto es necesario para que la validación de jQuery 
+    funcione en el contenido cargado dinámicamente.
+-->
+@{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+}

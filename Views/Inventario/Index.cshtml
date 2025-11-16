@@ -1,77 +1,36 @@
-@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Inventario>
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Lotes de Inventario";
 }
 
-<h1>Inventario</h1>
+<h1>Lotes de Inventario</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <button class="btn btn-primary"
+            hx-get="@Url.Action("Create")"
+            hx-target="#modal-content-generic"
+            hx-swap="innerHTML">
+        <i class="bi bi-plus-circle"></i> Registrar Lote (Compra)
+    </button>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.IdProducto)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdProveedor)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Cantidad)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CantidadDisponible)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PrecioCompra)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaEntrada)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaSalida)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Estado)
-            </th>
+            <th>Producto</th>
+            <th>Proveedor</th>
+            <th>Cant. Total</th>
+            <th>Cant. Disponible</th>
+            <th>Precio Compra</th>
+            <th>Fecha Entrada</th>
+            <th>Estado</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdProducto)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdProveedor)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Cantidad)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CantidadDisponible)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.PrecioCompra)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FechaEntrada)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FechaSalida)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Estado)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdInventario">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdInventario">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdInventario">Delete</a>
-            </td>
-        </tr>
-}
+    <tbody id="inventario-tbody"
+           hx-get="@Url.Action("GetInventarioList")"
+           hx-trigger="load, refreshInventarioList from:body"
+           hx-swap="innerHTML">
+           
+           <tr><td colspan="8">Cargando inventario...</td></tr>
     </tbody>
 </table>

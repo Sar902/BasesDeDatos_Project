@@ -1,47 +1,42 @@
-@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Proveedor>
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Proveedores";
 }
 
 <h1>Proveedores</h1>
 
+<h4 class="mb-3">
+    Proveedores Activos: 
+    <span class="badge bg-success"
+          hx-get="@Url.Action("GetProveedorCount")"
+          hx-trigger="load, refreshProveedorList from:body"
+          hx-swap="innerHTML">
+        ...
+    </span>
+</h4>
+
 <p>
-    <a asp-action="Create">Create New</a>
+    <button class="btn btn-primary"
+            hx-get="@Url.Action("Create")"
+            hx-target="#modal-content-generic"
+            hx-swap="innerHTML">
+        <i class="bi bi-plus-circle"></i> Crear Nuevo Proveedor
+    </button>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Nombre)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Contacto)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Estado)
-            </th>
+            <th>Nombre</th>
+            <th>Contacto</th>
+            <th>Estado</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Nombre)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Contacto)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Estado)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdProveedor">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdProveedor">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdProveedor">Delete</a>
-            </td>
-        </tr>
-}
+    <tbody id="proveedor-tbody"
+           hx-get="@Url.Action("GetProveedorList")"
+           hx-trigger="load, refreshProveedorList from:body"
+           hx-swap="innerHTML">
+           
+           <tr><td colspan="4">Cargando proveedores...</td></tr>
     </tbody>
 </table>

@@ -15,62 +15,120 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-        // GET: Categoria
-        public async Task<IActionResult> Index()
+        // ---------------------------------------------------------
+        // Helper: Detecta si la petición fue enviada por HTMX
+        // HTMX envía automáticamente la cabecera "HX-Request"
+        // ---------------------------------------------------------
+        private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
+
+        // ---------------------------------------------------------
+        // GET: Categoria/Index
+        // Vista principal SIN datos.
+        // La tabla será cargada dinámicamente usando HTMX.
+        // ---------------------------------------------------------
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        // ---------------------------------------------------------
+        // GET: Categoria/GetCategoriaList
+        // Devuelve la tabla de categorías (vista parcial).
+        // HTMX recarga esta sección cada vez que ocurre un cambio.
+        // ---------------------------------------------------------
+        [HttpGet]
+        public async Task<IActionResult> GetCategoriaList()
         {
             var categorias = await _context.Categoria
                                            .OrderBy(c => c.Nombre)
                                            .AsNoTracking()
                                            .ToListAsync();
-            return View(categorias);
+
+            return PartialView("_CategoriaList", categorias);
         }
 
+        // ---------------------------------------------------------
         // GET: Categoria/Details/5
+        // Muestra los detalles de una categoría.
+        // Si es HTMX, se envía al modal como parcial.
+        // ---------------------------------------------------------
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
             var categoria = await _context.Categoria
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.IdCategoria == id);
+                                          .AsNoTracking()
+                                          .FirstOrDefaultAsync(c => c.IdCategoria == id);
 
             if (categoria == null) return NotFound();
+
+            // Si viene desde HTMX, lo cargamos dentro del modal
+            if (IsHtmxRequest())
+            {
+                return PartialView("Details", categoria);
+            }
 
             return View(categoria);
         }
 
+        // ---------------------------------------------------------
         // GET: Categoria/Create
+        // Devuelve el formulario de creación.
+        // Si es HTMX, se carga en un modal.
+        // ---------------------------------------------------------
         public IActionResult Create()
         {
-            return View(new Categorium());
+            var categoria = new Categorium();
+
+            if (IsHtmxRequest())
+            {
+                return PartialView("Create", categoria);
+            }
+
+            return View(categoria);
         }
 
+        // ---------------------------------------------------------
         // POST: Categoria/Create
-      [HttpPost]
-[ValidateAntiForgeryToken]
+        // Crea una nueva categoría.
+        // HTMX usa la validación y el cierre del modal automáticamente.
+        // ---------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Nombre,PorcentajeGanancia")] Categorium categoria)
+        {
+            // Validación del modelo
+            if (!ModelState.IsValid)
+            {
+                // Devuelve el formulario con errores al modal
+                return PartialView("Create", categoria);
+            }
 
-public async Task<IActionResult> Create([Bind("Nombre,PorcentajeGanancia")] Categorium categoria)
-{
-    if (!ModelState.IsValid) return View(categoria);
+            // Verificar duplicados por nombre
+            bool existe = await _context.Categoria.AnyAsync(c => c.Nombre == categoria.Nombre);
+            if (existe)
+            {
+                ModelState.AddModelError("Nombre", "Ya existe una categoría con este nombre.");
+                return PartialView("Create", categoria);
+            }
 
-    // Validar duplicados
-    bool existe = await _context.Categoria.AnyAsync(c => c.Nombre == categoria.Nombre);
-    if (existe)
-    {
-        ModelState.AddModelError("Nombre", "Ya existe una categoría con este nombre.");
-        return View(categoria);
-    }
+            categoria.Estado = "Activo";
+            _context.Add(categoria);
+            await _context.SaveChangesAsync();
 
-    categoria.Estado = "Activo"; // Valor por defecto
-    _context.Add(categoria);      // EF Core generará IdCategoria automáticamente
-    await _context.SaveChangesAsync();
+            // Dispara eventos para:
+            // * Cerrar el modal
+            // * Refrescar la tabla
+            Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshCategoriaList");
 
-    return RedirectToAction(nameof(Index));
-}
+            // Respuesta vacía requerida por HTMX
+            return Content("", "text/html");
+        }
 
-
-
+        // ---------------------------------------------------------
         // GET: Categoria/Edit/5
+        // Devuelve el formulario de edición dentro del modal.
+        // ---------------------------------------------------------
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -78,25 +136,38 @@ public async Task<IActionResult> Create([Bind("Nombre,PorcentajeGanancia")] Cate
             var categoria = await _context.Categoria.FindAsync(id);
             if (categoria == null) return NotFound();
 
+            if (IsHtmxRequest())
+            {
+                return PartialView("Edit", categoria);
+            }
+
             return View(categoria);
         }
 
+        // ---------------------------------------------------------
         // POST: Categoria/Edit/5
+        // Guarda cambios de una categoría.
+        // Maneja validación, duplicados y HTMX.
+        // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("IdCategoria,Nombre,PorcentajeGanancia,Estado")] Categorium categoria)
         {
             if (id != categoria.IdCategoria) return NotFound();
 
-            if (!ModelState.IsValid) return View(categoria);
+            if (!ModelState.IsValid)
+            {
+                return PartialView("Edit", categoria);
+            }
 
-            // Validar duplicados (excepto esta categoría)
+            // Verifica duplicado excluyendo el actual
             bool existe = await _context.Categoria
                                         .AnyAsync(c => c.Nombre == categoria.Nombre && c.IdCategoria != id);
+
             if (existe)
             {
                 ModelState.AddModelError("Nombre", "Ya existe otra categoría con este nombre.");
-                return View(categoria);
+                return PartialView("Edit", categoria);
             }
 
             try
@@ -106,28 +177,45 @@ public async Task<IActionResult> Create([Bind("Nombre,PorcentajeGanancia")] Cate
             }
             catch (DbUpdateConcurrencyException)
             {
+                // Si se borró durante edición
                 if (!CategoriaExists(categoria.IdCategoria)) return NotFound();
                 else throw;
             }
 
-            return RedirectToAction(nameof(Index));
+            // Enviar señal de cierre + refrescar tabla
+            Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshCategoriaList");
+
+            return Content("", "text/html");
         }
 
+        // ---------------------------------------------------------
         // GET: Categoria/Delete/5
+        // Devuelve el formulario de confirmación.
+        // HTMX lo carga en un modal.
+        // ---------------------------------------------------------
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
 
             var categoria = await _context.Categoria
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.IdCategoria == id);
+                                          .AsNoTracking()
+                                          .FirstOrDefaultAsync(c => c.IdCategoria == id);
 
             if (categoria == null) return NotFound();
+
+            if (Request.Headers.ContainsKey("HX-Request"))
+            {
+                return PartialView("Delete", categoria);
+            }
 
             return View(categoria);
         }
 
+        // ---------------------------------------------------------
         // POST: Categoria/Delete/5
+        // Elimina una categoría SI NO tiene productos asociados.
+        // La validación se muestra dentro del modal usando HTMX.
+        // ---------------------------------------------------------
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -135,20 +223,33 @@ public async Task<IActionResult> Create([Bind("Nombre,PorcentajeGanancia")] Cate
             var categoria = await _context.Categoria.FindAsync(id);
             if (categoria == null) return NotFound();
 
-            // Validación: no eliminar si tiene productos relacionados
+            // Validar si tiene productos asociados
             bool tieneProductos = await _context.Producto
                                                 .AnyAsync(p => p.IdCategoria == id);
+
             if (tieneProductos)
             {
+                // Muestra error dentro del modal
                 ModelState.AddModelError("", "No se puede eliminar esta categoría porque tiene productos relacionados.");
-                return View(categoria);
+                return PartialView("Delete", categoria);
             }
 
             _context.Categoria.Remove(categoria);
             await _context.SaveChangesAsync();
+
+            // Cerrar modal y refrescar tabla
+            if (Request.Headers.ContainsKey("HX-Request"))
+            {
+                Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshCategoriaList");
+                return Content("", "text/html");
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
+        // ---------------------------------------------------------
+        // Verifica si existe una categoría por ID
+        // ---------------------------------------------------------
         private bool CategoriaExists(int id)
         {
             return _context.Categoria.Any(c => c.IdCategoria == id);

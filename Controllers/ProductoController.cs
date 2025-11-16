@@ -18,183 +18,268 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-        // GET: Producto
-        public async Task<IActionResult> Index()
-        {
-            // El cambio importante es el ".Include":
-            var sistemaInventarioFinalContext = _context.Producto.Include(p => p.IdCategoriaNavigation);
-            return View(await sistemaInventarioFinalContext.ToListAsync());
-        }
+        // -------------------------------------------------------------------
+        // --------------------   CONFIGURACIÓN HTMX   ------------------------
+        // -------------------------------------------------------------------
 
-        // GET: Producto/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        // Método que detecta si la solicitud viene desde HTMX
+        private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
 
-            var producto = await _context.Producto
-                .FirstOrDefaultAsync(m => m.IdProducto == id);
+        // Carga de dropdowns (solo Categoría porque Producto no tiene Proveedor)
+        private async Task PopulateDropdowns(Producto producto = null)
+        {
+            // Si no se pasa producto, carga el dropdown sin selección
             if (producto == null)
             {
-                return NotFound();
+                ViewData["IdCategoria"] = new SelectList(
+                    await _context.Categoria.AsNoTracking().ToListAsync(),
+                    "IdCategoria", "Nombre"
+                );
             }
+            else
+            {
+                // Si se pasa producto, carga el dropdown seleccionando su categoría
+                ViewData["IdCategoria"] = new SelectList(
+                    await _context.Categoria.AsNoTracking().ToListAsync(),
+                    "IdCategoria", "Nombre",
+                    producto.IdCategoria
+                );
+            }
+        }
+
+        // Carga un diccionario de categorías para mostrar nombre en lugar de ID
+        private async Task LoadCategoriasMap()
+        {
+            ViewData["CategoriasMap"] = await _context.Categoria
+                .AsNoTracking()
+                .ToDictionaryAsync(c => c.IdCategoria, c => c.Nombre);
+        }
+
+        // -------------------------------------------------------------------
+        // ---------------------------   LISTA   ------------------------------
+        // -------------------------------------------------------------------
+
+        // Pantalla principal de productos
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        // Devuelve la lista parcial de productos para HTMX
+        [HttpGet]
+        public async Task<IActionResult> GetProductoList()
+        {
+            // Carga el mapa de categorías para mostrar sus nombres
+            await LoadCategoriasMap();
+
+            // Obtiene la lista desde la vista SQL VProducto
+            var vProductos = await _context.VProducto
+                .AsNoTracking()
+                .OrderBy(p => p.Nombre)
+                .ToListAsync();
+
+            return PartialView("_ProductoList", vProductos);
+        }
+
+        // -------------------------------------------------------------------
+        // ---------------------------   DETALLES   ---------------------------
+        // -------------------------------------------------------------------
+
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null) return NotFound();
+
+            await LoadCategoriasMap(); // carga los nombres de categorías
+
+            var vProducto = await _context.VProducto
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.IdProducto == id);
+
+            if (vProducto == null) return NotFound();
+
+            // Si es HTMX devuelve parcial; de lo contrario, vista normal
+            if (IsHtmxRequest())
+                return PartialView("Details", vProducto);
+
+            return View(vProducto);
+        }
+
+        // -------------------------------------------------------------------
+        // ---------------------------   CREAR   ------------------------------
+        // -------------------------------------------------------------------
+
+        // Formulario para crear producto
+        public async Task<IActionResult> Create()
+        {
+            await PopulateDropdowns(); // carga las categorías
+            var producto = new Producto();
+
+            // Si es HTMX, abrirá modal parcial
+            if (IsHtmxRequest())
+                return PartialView("Create", producto);
 
             return View(producto);
         }
 
-        // GET: Producto/Create
-       public IActionResult Create()
-       {
-        ViewBag.IdCategoria = new SelectList(_context.Categoria, "IdCategoria", "Nombre");
-        return View(new Producto()); // <--- PASAR UN MODELO VACÍO
-       }
-
-        // POST: Producto/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        // POST: Producto/Create
+        // Guardar producto nuevo
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre,Estado")] Producto producto)
+        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre,Cantidad,Estado")] Producto producto)
         {
             if (ModelState.IsValid)
             {
-                producto.Cantidad = 0;
+                // Verifica si ya existe un producto con el mismo nombre
+                bool existe = await _context.Producto.AnyAsync(p => p.Nombre == producto.Nombre);
+
+                if (existe)
+                {
+                    ModelState.AddModelError("Nombre", "Ya existe un producto con este nombre.");
+                    await PopulateDropdowns(producto);
+                    return PartialView("Create", producto);
+                }
+
+                // Guarda en BD
                 _context.Add(producto);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+
+                // Notificación HTMX para cerrar modal y refrescar lista
+                Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshProductoList");
+                return Content("", "text/html");
             }
-            // Si algo falla, recargamos la lista para que no dé error:
-            ViewData["IdCategoria"] = new SelectList(_context.Categoria, "IdCategoria", "Nombre", producto.IdCategoria);
-            return View(producto);
+
+            // Si modelo inválido, recargar dropdowns y retornar modal
+            await PopulateDropdowns(producto);
+            return PartialView("Create", producto);
         }
 
-        // GET: Producto/Edit/5
-        // GET: Producto/Edit/5
+        // -------------------------------------------------------------------
+        // ---------------------------   EDITAR   -----------------------------
+        // -------------------------------------------------------------------
+
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
+            // Busca el producto por ID
             var producto = await _context.Producto.FindAsync(id);
-            if (producto == null)
-            {
-                return NotFound();
-            }
-            // === INICIO DE CAMBIOS ===
-            // Agregamos la lista de categorías. El "producto.IdCategoria" 
-            // le dice al dropdown cuál valor debe seleccionar por defecto.
-            ViewData["IdCategoria"] = new SelectList(_context.Categoria, "IdCategoria", "Nombre", producto.IdCategoria);
-            // === FIN DE CAMBIOS ===
+            if (producto == null) return NotFound();
+
+            await PopulateDropdowns(producto);
+
+            if (IsHtmxRequest())
+                return PartialView("Edit", producto);
+
             return View(producto);
         }
 
-        // POST: Producto/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        // POST: Producto/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdProducto,IdCategoria,Nombre,Estado")] Producto producto)
+        public async Task<IActionResult> Edit(int id, [Bind("IdProducto,IdCategoria,Nombre,Cantidad,Estado")] Producto producto)
         {
-            if (id != producto.IdProducto)
+            if (id != producto.IdProducto) return NotFound();
+
+            if (ModelState.IsValid)
             {
-                return NotFound();
+                // Verifica duplicado con otro ID
+                bool existe = await _context.Producto
+                    .AnyAsync(p => p.Nombre == producto.Nombre && p.IdProducto != id);
+
+                if (existe)
+                {
+                    ModelState.AddModelError("Nombre", "Ya existe otro producto con este nombre.");
+                    await PopulateDropdowns(producto);
+                    return PartialView("Edit", producto);
+                }
+
+                try
+                {
+                    // Actualiza registro
+                    _context.Update(producto);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!ProductoExists(producto.IdProducto)) return NotFound();
+                    else throw;
+                }
+
+                // Trigger de HTMX
+                Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshProductoList");
+                return Content("", "text/html");
             }
 
-        if (ModelState.IsValid)
-{
-    try
-    {
-        var productoDB = await _context.Producto
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.IdProducto == id);
-
-        if (productoDB == null) return NotFound();
-
-        // Mantener cantidad original (no editable)
-        producto.Cantidad = productoDB.Cantidad;
-
-        _context.Update(producto);
-        await _context.SaveChangesAsync();
-    }
-    catch (DbUpdateConcurrencyException)
-    {
-        if (!ProductoExists(producto.IdProducto))
-        {
-            return NotFound();
-        }
-        else
-        {
-            throw;
-        }
-    }
-    return RedirectToAction(nameof(Index));
-}
-
-            // === INICIO DE CAMBIOS ===
-            // Si algo falla, recargamos la lista para que no dé error:
-            ViewData["IdCategoria"] = new SelectList(_context.Categoria, "IdCategoria", "Nombre", producto.IdCategoria);
-            // === FIN DE CAMBIOS ===
-            return View(producto);
+            // Si hay error, recargar dropdowns
+            await PopulateDropdowns(producto);
+            return PartialView("Edit", producto);
         }
 
-        // GET: Producto/Delete/5
+        // -------------------------------------------------------------------
+        // ---------------------------   ELIMINAR   ---------------------------
+        // -------------------------------------------------------------------
+
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var producto = await _context.Producto
+            // Trae información desde vista VProducto
+            var vProducto = await _context.VProducto
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.IdProducto == id);
-            if (producto == null)
-            {
-                return NotFound();
-            }
 
-            return View(producto);
+            if (vProducto == null) return NotFound();
+
+            if (IsHtmxRequest())
+                return PartialView("Delete", vProducto);
+
+            return View(vProducto);
         }
 
-        // POST: Producto/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            // Busca el producto real en la tabla Producto
+            var producto = await _context.Producto.FindAsync(id);
+            if (producto == null) return NotFound();
 
+            // Verificar relaciones existentes
+            bool tieneDetallesVenta = await _context.DetalleVenta.AnyAsync(d => d.IdProducto == id);
+            bool tieneInventario = await _context.Inventario.AnyAsync(i => i.IdProducto == id);
 
-public async Task<IActionResult> DeleteConfirmed(int id)
-{
-    // Buscar el producto
-    var producto = await _context.Producto.FindAsync(id);
-    if (producto == null)
-    {
-        return NotFound();
-    }
+            // Si el producto está siendo usado en otras tablas, no puede eliminarse
+            if (tieneDetallesVenta || tieneInventario)
+            {
+                string error = "No se puede eliminar: tiene ";
+                if (tieneDetallesVenta) error += "ventas asociadas";
+                if (tieneDetallesVenta && tieneInventario) error += " y ";
+                if (tieneInventario) error += "registros de inventario";
+                error += ".";
 
-    // VALIDACIÓN: revisar si tiene relaciones
-    var tieneRelacion = _context.Inventario.Any(I => I.IdProducto == id) ||
-                        _context.DetallePerdida.Any(dp => dp.IdProducto == id) ||
-                        _context.DetalleVenta.Any(dv => dv.IdProducto == id) ||
-                        _context.DetalleSolicitudDevolucion.Any(dd => dd.IdProducto == id);
+                ModelState.AddModelError("", error);
 
-    if (tieneRelacion)
-    {
-        ModelState.AddModelError("", "No se puede eliminar este producto.");
-        return View(producto); // regresamos a la vista sin eliminar
-    }
+                // Se recarga la vista de confirmación usando VProducto
+                var vProducto = await _context.VProducto
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.IdProducto == id);
 
-    // Si no tiene relaciones, eliminar
-    _context.Producto.Remove(producto);
-    await _context.SaveChangesAsync();
+                return PartialView("Delete", vProducto);
+            }
 
-    return RedirectToAction(nameof(Index));
-    }
+            // Si no tiene relaciones, puede eliminarse
+            _context.Producto.Remove(producto);
+            await _context.SaveChangesAsync();
 
+            if (IsHtmxRequest())
+            {
+                // Cierra modal y refresca lista
+                Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshProductoList");
+                return Content("", "text/html");
+            }
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Verifica existencia del producto por ID
         private bool ProductoExists(int id)
         {
             return _context.Producto.Any(e => e.IdProducto == id);
