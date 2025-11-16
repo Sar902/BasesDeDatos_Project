@@ -45,6 +45,25 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        // Este script intercepta CUALQUIER envío de formulario en toda la aplicación
+        $(document).on('submit', 'form', function() {
+            
+            // Busca todos los inputs que esperan un número (tienen 'data-val-number')
+            $(this).find('input[data-val-number]').each(function() {
+                var $input = $(this);
+                var valor = $input.val();
+                
+                if (valor) {
+                    // Reemplaza el punto (.) por una coma (,)
+                    // para que el backend (que espera comas) siempre lo reciba bien.
+                    $input.val(valor.replace('.', ','));
+                }
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

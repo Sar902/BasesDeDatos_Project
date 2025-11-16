@@ -1,0 +1,18 @@
+# Build results
+bin/
+obj/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+**/.nuget/
+
+# Visual Studio artifacts
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+.fake

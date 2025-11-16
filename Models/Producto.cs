@@ -27,7 +27,7 @@ public partial class Producto
 
     public virtual ICollection<DetalleVentum> DetalleVenta { get; set; } = new List<DetalleVentum>();
 
-    public Categorium IdCategoriaNavigation { get; set; } = null!;
+    public Categorium? IdCategoriaNavigation { get; set; }
 
     
     public virtual ICollection<Inventario> Inventario { get; set; } = new List<Inventario>();
