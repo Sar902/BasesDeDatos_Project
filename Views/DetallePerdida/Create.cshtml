@@ -1,53 +1,38 @@
 @model ProyectoSistemaInventarioNuevo.Models.DetallePerdidum
 
-@{
-    ViewData["Title"] = "Create";
-}
+<div id="modal-content-generic">
+<form hx-post="@Url.Action("Create","DetallePerdida")" 
+      hx-target="#modal-content-generic" 
+      hx-swap="outerHTML">
 
-<h1>Create</h1>
+    @Html.AntiForgeryToken()
 
-<h4>DetallePerdidum</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="IdPerdida" class="control-label"></label>
-                <input asp-for="IdPerdida" class="form-control" />
-                <span asp-validation-for="IdPerdida" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdProducto" class="control-label"></label>
-                <input asp-for="IdProducto" class="form-control" />
-                <span asp-validation-for="IdProducto" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CantidadPerdida" class="control-label"></label>
-                <input asp-for="CantidadPerdida" class="form-control" />
-                <span asp-validation-for="CantidadPerdida" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PrecioCompraUnitario" class="control-label"></label>
-                <input asp-for="PrecioCompraUnitario" class="form-control" />
-                <span asp-validation-for="PrecioCompraUnitario" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="SubtotalPerdida" class="control-label"></label>
-                <input asp-for="SubtotalPerdida" class="form-control" />
-                <span asp-validation-for="SubtotalPerdida" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+    <div class="modal-header">
+        <h5 class="modal-title">Crear Pérdida</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+        <div class="mb-2">
+            <label asp-for="IdProducto">Producto</label>
+            <select asp-for="IdProducto" class="form-control" asp-items="@(ViewBag.Productos)">
+                <option value="">-- Seleccione --</option>
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label asp-for="CantidadPerdida">Cantidad pérdida</label>
+            <input asp-for="CantidadPerdida" class="form-control" type="number"/>
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </div>
+</form>
+
+@await Html.PartialAsync("_ValidationScriptsPartial")

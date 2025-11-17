@@ -50,6 +50,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0ZWdvcmlhXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Categoria/_CategoriaList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0ZWdvcmlhXF9DYXRlZ29yaWFMaXN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/DetallePerdida/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGV0YWxsZVBlcmRpZGFcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -68,6 +72,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/DetallePerdida/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGV0YWxsZVBlcmRpZGFcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/DetallePerdida/_DetallePerdidaList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGV0YWxsZVBlcmRpZGFcX0RldGFsbGVQZXJkaWRhTGlzdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/DetalleSolicitudDevolucion/Create.cshtml]
@@ -138,6 +146,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50YXJpb1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Inventario/_InventarioList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50YXJpb1xfSW52ZW50YXJpb0xpc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Perdida/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyZGlkYVxDcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -178,6 +190,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdG9cSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Producto/_ProductoList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdG9cX1Byb2R1Y3RvTGlzdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Proveedor/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvdmVlZG9yXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -196,6 +212,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Proveedor/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvdmVlZG9yXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Proveedor/_ProveedorList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvdmVlZG9yXF9Qcm92ZWVkb3JMaXN0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Shared/Error.cshtml]
@@ -284,6 +304,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Venta/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmVudGFcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/Venta/_VentaList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmVudGFcX1ZlbnRhTGlzdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/ashle/ProyectoSistemaInventarioNuevo/Views/VProducto/Create.cshtml]

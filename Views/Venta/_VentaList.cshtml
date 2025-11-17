@@ -1,0 +1,24 @@
+@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.VVentum>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>@Html.DisplayFor(modelItem => item.IdVenta)</td>
+        <td>@Html.DisplayFor(modelItem => item.Fecha)</td>
+        <td>@Html.DisplayFor(modelItem => item.Total)</td>
+        <td>@Html.DisplayFor(modelItem => item.GananciaTotal)</td>
+        <td>
+            <button class="btn btn-info btn-sm"
+               hx-get="@Url.Action("Details", new { id = item.IdVenta })"
+               hx-target="#modal-content-generic"
+               hx-swap="innerHTML">
+                Details
+            </button> |
+            <button class="btn btn-danger btn-sm"
+               hx-get="@Url.Action("Delete", new { id = item.IdVenta })"
+               hx-target="#modal-content-generic"
+               hx-swap="innerHTML">
+                Delete
+            </button>
+        </td>
+    </tr>
+}

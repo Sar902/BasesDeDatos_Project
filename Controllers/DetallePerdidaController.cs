@@ -18,162 +18,212 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-        // GET: DetallePerdida
-        public async Task<IActionResult> Index()
+        // ===============================
+        //       Helper HTMX
+        // ===============================
+        private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
+
+        private async Task PopulateProductos(DetallePerdidum detalle = null)
         {
-            return View(await _context.DetallePerdida.ToListAsync());
+            var productos = await _context.Producto
+                .OrderBy(p => p.Nombre)
+                .Select(p => new { p.IdProducto, p.Nombre })
+                .ToListAsync();
+
+            ViewBag.Productos = new SelectList(productos, "IdProducto", "Nombre", detalle?.IdProducto);
         }
 
-        // GET: DetallePerdida/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // ===============================
+        //        Recalcular Stock
+        // ===============================
+        private async Task RecalculateProductoStock(int idProducto)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var producto = await _context.Producto.FindAsync(idProducto);
+            if (producto == null) return;
 
-            var detallePerdidum = await _context.DetallePerdida
-                .FirstOrDefaultAsync(m => m.IdDetallePerdida == id);
-            if (detallePerdidum == null)
-            {
-                return NotFound();
-            }
+            var totalPerdido = await _context.DetallePerdida
+                .Where(d => d.IdProducto == idProducto)
+                .SumAsync(d => d.CantidadPerdida);
 
-            return View(detallePerdidum);
-        }
-
-        // GET: DetallePerdida/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: DetallePerdida/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-       public async Task<IActionResult> Create([Bind("IdDetallePerdida,IdPerdida,IdProducto,CantidadPerdida,PrecioCompraUnitario,SubtotalPerdida")] DetallePerdidum detallePerdidum)
-{
-    var producto = await _context.Producto.FindAsync(detallePerdidum.IdProducto);
-
-    // VALIDACIÓN: la cantidad a perder no puede ser mayor que la disponible
-    if(producto != null && detallePerdidum.CantidadPerdida > producto.Cantidad)
-    {
-        ModelState.AddModelError("", "La cantidad a perder no puede ser mayor que la cantidad disponible del producto.");
-        return View(detallePerdidum); // retorna la vista con mensaje
-    }
-
-    if (ModelState.IsValid)
-    {
-        // ACTUALIZAR CANTIDAD DEL PRODUCTO AUTOMÁTICAMENTE
-        if(producto != null)
-        {
-            producto.Cantidad -= detallePerdidum.CantidadPerdida;
-
-            // Si la cantidad llega a 0, cambiar estado o poner fecha de salida
-            if(producto.Cantidad <= 0)
-            {
-                producto.Cantidad = 0;
-                producto.Estado = "Agotado"; // o producto.FechaSalida = DateTime.Now si tienes ese campo
-            }
+            // Calculamos stock actual
+            producto.Cantidad = Math.Max(producto.Cantidad - totalPerdido, 0);
+            producto.Estado = (producto.Cantidad > 0) ? "Activo" : "Agotado";
 
             _context.Update(producto);
+            await _context.SaveChangesAsync();
         }
 
-        _context.Add(detallePerdidum);
-        await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
-    }
+        // ===============================
+        //            INDEX
+        // ===============================
+        public async Task<IActionResult> Index()
+        {
+            return View(); // HTMX cargará la tabla con GetDetallePerdidaList
+        }
+[HttpGet]
+public async Task<IActionResult> GetDetallePerdidaList()
+{
+    var detalles = await _context.DetallePerdida
+        .Include(d => d.IdProductoNavigation)
+        .Include(d => d.IdPerdidaNavigation)
+        .OrderByDescending(d => d.IdDetallePerdida)
+        .ToListAsync();
 
-    return View(detallePerdidum);
+    return PartialView("_DetallePerdidaList", detalles);
 }
 
-        // GET: DetallePerdida/Edit/5
+
+        // ===============================
+        //           DETAILS
+        // ===============================
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var detalle = await _context.DetallePerdida
+                .Include(d => d.IdProductoNavigation)
+                .Include(d => d.IdPerdidaNavigation)
+                .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
+
+            if (detalle == null) return NotFound();
+
+            return IsHtmxRequest()
+                ? PartialView("Details", detalle)
+                : View(detalle);
+        }
+
+        // ===============================
+        //            CREATE
+        // ===============================        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(DetallePerdidum detalle, DateTime fecha)
+        {
+            await PopulateProductos(detalle);
+
+            if (!ModelState.IsValid)
+                return PartialView("Create", detalle);
+
+            var producto = await _context.Producto.FindAsync(detalle.IdProducto);
+            if (producto == null)
+            {
+                ModelState.AddModelError("", "Producto no encontrado.");
+                return PartialView("Create", detalle);
+            }
+
+            if (detalle.CantidadPerdida > producto.Cantidad)
+            {
+                ModelState.AddModelError("", "La cantidad a perder no puede ser mayor que la disponible.");
+                return PartialView("Create", detalle);
+            }
+
+            var perdida = new Perdidum { Fecha = fecha };
+            _context.Perdida.Add(perdida);
+            await _context.SaveChangesAsync();
+
+            detalle.IdPerdida = perdida.IdPerdida;
+            detalle.SubtotalPerdida = detalle.CantidadPerdida * detalle.PrecioCompraUnitario;
+
+            _context.DetallePerdida.Add(detalle);
+            await _context.SaveChangesAsync();
+
+            producto.Cantidad -= detalle.CantidadPerdida;
+            producto.Estado = producto.Cantidad > 0 ? "Activo" : "Agotado";
+            _context.Update(producto);
+            await _context.SaveChangesAsync();
+
+            Response.Headers["HX-Trigger"] = "htmx:closeModal, refreshDetallePerdidaList";
+            return Content("", "text/html");
+        }
+
+
+        //EDIT
+     
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var detallePerdidum = await _context.DetallePerdida.FindAsync(id);
-            if (detallePerdidum == null)
-            {
-                return NotFound();
-            }
-            return View(detallePerdidum);
+            var detalle = await _context.DetallePerdida.FindAsync(id);
+            if (detalle == null) return NotFound();
+
+            await PopulateProductos(detalle);
+
+            return IsHtmxRequest()
+                ? PartialView("Edit", detalle)
+                : View(detalle);
         }
 
-        // POST: DetallePerdida/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdDetallePerdida,IdPerdida,IdProducto,CantidadPerdida,PrecioCompraUnitario,SubtotalPerdida")] DetallePerdidum detallePerdidum)
+        public async Task<IActionResult> Edit(int id, DetallePerdidum detalle)
         {
-            if (id != detallePerdidum.IdDetallePerdida)
+            if (id != detalle.IdDetallePerdida) return NotFound();
+
+            await PopulateProductos(detalle);
+
+            if (!ModelState.IsValid)
+                return PartialView("Edit", detalle);
+
+            var detalleOriginal = await _context.DetallePerdida.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
+
+            if (detalleOriginal == null) return NotFound();
+
+            // Validación: cantidad no mayor que disponible
+            var producto = await _context.Producto.FindAsync(detalle.IdProducto);
+            if (detalle.CantidadPerdida > producto.Cantidad + detalleOriginal.CantidadPerdida)
             {
-                return NotFound();
+                ModelState.AddModelError("", "La cantidad a perder no puede ser mayor que la disponible.");
+                return PartialView("Edit", detalle);
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(detallePerdidum);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DetallePerdidumExists(detallePerdidum.IdDetallePerdida))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(detallePerdidum);
+            detalle.SubtotalPerdida = detalle.CantidadPerdida * detalle.PrecioCompraUnitario;
+
+            _context.Update(detalle);
+            await _context.SaveChangesAsync();
+
+            await RecalculateProductoStock(detalle.IdProducto);
+         Response.Headers["HX-Trigger"] = "htmx:closeModal, refreshDetallePerdidaList";
+            return Content("", "text/html");
         }
 
-        // GET: DetallePerdida/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var detallePerdidum = await _context.DetallePerdida
-                .FirstOrDefaultAsync(m => m.IdDetallePerdida == id);
-            if (detallePerdidum == null)
-            {
-                return NotFound();
-            }
+            var detalle = await _context.DetallePerdida
+                .Include(d => d.IdProductoNavigation)
+                .Include(d => d.IdPerdidaNavigation)
+                .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
 
-            return View(detallePerdidum);
+            if (detalle == null) return NotFound();
+
+            return IsHtmxRequest()
+                ? PartialView("Delete", detalle)
+                : View(detalle);
         }
 
-        // POST: DetallePerdida/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var detallePerdidum = await _context.DetallePerdida.FindAsync(id);
-            if (detallePerdidum != null)
+            var detalle = await _context.DetallePerdida.FindAsync(id);
+            if (detalle == null) return NotFound();
+
+            _context.DetallePerdida.Remove(detalle);
+            await _context.SaveChangesAsync();
+
+            await RecalculateProductoStock(detalle.IdProducto);
+
+            if (IsHtmxRequest())
             {
-                _context.DetallePerdida.Remove(detallePerdidum);
+                Response.Headers["HX-Trigger"] = "htmx:closeModal, refreshDetallePerdidaList";
+                return Content("", "text/html");
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool DetallePerdidumExists(int id)
+        private bool DetallePerdidaExists(int id)
         {
             return _context.DetallePerdida.Any(e => e.IdDetallePerdida == id);
         }
