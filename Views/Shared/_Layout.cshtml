@@ -1,113 +1,159 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Sistema de Ventas </title>
+    <title>@ViewData["Title"] - Sistema de Ventas</title>
     <script type="importmap"></script>
+    
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ProyectoSistemaInventarioNuevo.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
-    <!-- Añadido Alpine.js -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        body { 
+            overflow-x: hidden; 
+        }
+        
+        /* Contenedor principal flexible */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            align-items: stretch; /* Asegura que ambos lados tengan la misma altura */
+        }
+
+        /* Barra Lateral Fija (Sin opción de ocultar) */
+        #sidebar-wrapper {
+            min-width: 15rem;
+            max-width: 15rem;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+
+        /* Título y lista de la barra */
+        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 1.2rem; }
+        #sidebar-wrapper .list-group { width: 15rem; }
+
+        /* Contenido Principal: Ocupa todo el espacio restante */
+        #page-content-wrapper {
+            flex: 1;          
+            min-width: 0;     
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Estilos Modo Oscuro */
+        body.dark-mode #sidebar-wrapper { background-color: #343a40; color: white; border-right-color: #454d55; }
+        body.dark-mode .list-group-item { background-color: #343a40; color: white; border-color: #454d55; }
+        body.dark-mode .list-group-item:hover { background-color: #454d55; }
+    </style>
 </head>
 
-<!-- 
-    Añadido 'x-data' y 'x-init' a la etiqueta <body>.
-    'x-init' contiene el nuevo script (sin jQuery) que reemplaza puntos por comas.
--->
 <body x-data x-init="
-    // Intercepta todos los envíos de formularios a nivel global
     window.addEventListener('submit', event => {
-        
-        // 'event.target' es el formulario que se está enviando
-        // Usamos querySelectorAll (JS moderno) en lugar de $(this).find()
         event.target.querySelectorAll('input[data-val-number]').forEach(input => {
-            if (input.value) {
-                // Reemplazamos el punto por la coma
-                input.value = input.value.replace('.', ',');
-            }
+            if (input.value) input.value = input.value.replace('.', ',');
         });
     })
 ">
- <header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-            <!-- Botón hamburguesa para pantallas pequeñas -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" 
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
 
-            <!-- Enlaces a la derecha -->
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                    </li>
-                </ul>
+    <div id="wrapper">
+
+        <nav id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4 fw-bold fs-4">Sistema Ventas</div>
+            <ul class="list-group list-group-flush">
+                <a asp-controller="Home" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a asp-controller="Producto" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-box-seam me-2"></i>Productos</a>
+                <a asp-controller="Categoria" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-tags me-2"></i>Categorías</a>
+                <a asp-controller="Inventario" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-clipboard-data me-2"></i>Inventario</a>
+                <a asp-controller="Venta" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-cart3 me-2"></i>Ventas</a>
+                <a asp-controller="Proveedor" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-people me-2"></i>Proveedores</a>
+                <a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-exclamation-triangle me-2"></i>Pérdidas</a>
+                <a asp-controller="SolicitudDevolucion" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-arrow-return-left me-2"></i>Devoluciones</a>
+                <a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="list-group-item list-group-item-action bg-transparent"><i class="bi bi-file-text me-2"></i>Det. Devolución</a>
+                
+                <li class="list-group-item bg-transparent text-center mt-3 border-0">
+                    @* <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary w-100">Modo Oscuro</button> *@
+                </li>
+            </ul>
+        </nav>
+
+        <div id="page-content-wrapper">
+
+            <header>
+                <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                    <div class="container-fluid">
+                        
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" 
+                                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+
+                        <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
+                            <ul class="navbar-nav">
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+
+            <div class="container-fluid px-4">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
             </div>
-        </div>
-    </nav>
-</header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </div>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Añadido HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-   
     <div id="modal-generic" class="modal fade" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
-        <div class="modal-dialog modal-lg"> <!-- modal-lg para más espacio -->
-            <div id="modal-content-generic" class="modal-content">
-                <!-- El contenido (formulario) se cargará aquí por HTMX -->
-            </div>
+        <div class="modal-dialog modal-lg">
+            <div id="modal-content-generic" class="modal-content"></div>
         </div>
     </div>
 
     <script>
+        // 1. Modo Oscuro
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                darkModeToggle.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
+            });
+        }
+
+        // 2. HTMX Modal Config
         (function() {
-            // Variable para instanciar el modal de Bootstrap
             let modalInstance = null;
             const modalElement = document.getElementById('modal-generic');
 
-            // Cuando HTMX carga contenido en nuestro contenedor...
             htmx.on('#modal-content-generic', 'htmx:afterSwap', (e) => {
-                // ...mostramos el modal.
-                if (!modalInstance) {
-                    modalInstance = new bootstrap.Modal(modalElement);
-                }
+                if (!modalInstance) modalInstance = new bootstrap.Modal(modalElement);
                 modalInstance.show();
             });
 
-            // Escuchamos un evento personalizado "htmx:closeModal" que enviaremos desde el servidor
             htmx.on('htmx:closeModal', () => {
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
+                if (modalInstance) modalInstance.hide();
             });
-            
-            // Limpiar el contenido del modal cuando se oculta para evitar data "vieja"
+
             modalElement.addEventListener('hidden.bs.modal', event => {
               htmx.find('#modal-content-generic').innerHTML = "";
             })
         })();
     </script>
-     @await RenderSectionAsync("Scripts", required: false)
+    
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
