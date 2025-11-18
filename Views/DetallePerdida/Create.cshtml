@@ -1,38 +1,54 @@
-@model ProyectoSistemaInventarioNuevo.Models.DetallePerdidum
+@model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaDetalleViewModel 
+@{ Layout = null; }
 
-<div id="modal-content-generic">
-<form hx-post="@Url.Action("Create","DetallePerdida")" 
-      hx-target="#modal-content-generic" 
-      hx-swap="outerHTML">
+<div class="modal-header">
+    <h5 class="modal-title">Registrar Nueva Pérdida</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
 
-    @Html.AntiForgeryToken()
+<div class="modal-body">
+    <form asp-action="Create"
+          hx-post="@Url.Action("Create", "DetallePerdida")"
+          hx-target="#modal-content-generic"
+          hx-swap="innerHTML">
+        
+        @Html.AntiForgeryToken()
+        
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-    <div class="modal-header">
-        <h5 class="modal-title">Crear Pérdida</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-    </div>
-
-    <div class="modal-body">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <div class="mb-2">
-            <label asp-for="IdProducto">Producto</label>
-            <select asp-for="IdProducto" class="form-control" asp-items="@(ViewBag.Productos)">
+        <div class="mb-3">
+            <label asp-for="Motivo" class="form-label">Motivo de la Pérdida</label>
+            <input asp-for="Motivo" class="form-control" />
+            <span asp-validation-for="Motivo" class="text-danger"></span>
+        </div>
+        
+        <div class="mb-3">
+            <label asp-for="IdProducto" class="form-label">Producto</label>
+            <select asp-for="IdProducto" class="form-select" asp-items="ViewBag.Productos">
                 <option value="">-- Seleccione --</option>
             </select>
+            <span asp-validation-for="IdProducto" class="text-danger"></span>
         </div>
 
-        <div class="mb-2">
-            <label asp-for="CantidadPerdida">Cantidad pérdida</label>
-            <input asp-for="CantidadPerdida" class="form-control" type="number"/>
+        <div class="mb-3">
+            <label asp-for="CantidadPerdida" class="form-label">Cantidad</label>
+            <input asp-for="CantidadPerdida" class="form-control" type="number" min="1" />
+            <span asp-validation-for="CantidadPerdida" class="text-danger"></span>
         </div>
 
-    </div>
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</div>
 
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-    </div>
-</form>
-
-@await Html.PartialAsync("_ValidationScriptsPartial")
+@section Scripts {
+    <script>
+        // Esto fuerza a jQuery Validation a reconocer el nuevo formulario
+        var form = document.querySelector('#modal-content-generic form');
+        if (form && window.jQuery && window.jQuery.validator) {
+            $.validator.unobtrusive.parse(form);
+        }
+    </script>
+}

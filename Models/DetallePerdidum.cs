@@ -10,6 +10,8 @@ public partial class DetallePerdidum
 
     public int IdPerdida { get; set; }
 
+
+   [Display(Name = "Producto")]
     public int IdProducto { get; set; }
 
    [Display(Name = "Cantidad Pérdida")]
