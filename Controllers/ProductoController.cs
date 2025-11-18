@@ -124,11 +124,17 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // Guardar producto nuevo
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre,Cantidad,Estado")] Producto producto)
+        public async Task<IActionResult> Create([Bind("IdCategoria,Nombre")] Producto producto)
         {
+            producto.Cantidad = 0; 
+            
+            producto.Estado = "Activo";
+
+            ModelState.Remove("Estado");
+            ModelState.Remove("Cantidad");
+
             if (ModelState.IsValid)
             {
-                // Verifica si ya existe un producto con el mismo nombre
                 bool existe = await _context.Producto.AnyAsync(p => p.Nombre == producto.Nombre);
 
                 if (existe)
@@ -138,16 +144,13 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                     return PartialView("Create", producto);
                 }
 
-                // Guarda en BD
                 _context.Add(producto);
                 await _context.SaveChangesAsync();
 
-                // Notificación HTMX para cerrar modal y refrescar lista
                 Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshProductoList");
                 return Content("", "text/html");
             }
 
-            // Si modelo inválido, recargar dropdowns y retornar modal
             await PopulateDropdowns(producto);
             return PartialView("Create", producto);
         }

@@ -31,16 +31,13 @@
         </div>
         
         <div class="form-group">
-            <label asp-for="Cantidad" class="control-label">Cantidad (Stock Inicial)</label>
-            <input asp-for="Cantidad" class="form-control" type="number" />
-            <span asp-validation-for="Cantidad" class="text-danger"></span>
+            <label class="control-label">Cantidad (Stock Inicial)</label>
+            <input class="form-control" type="number" value="0" readonly disabled />
+            <input type="hidden" asp-for="Cantidad" value="0" />
         </div>
 
-        <div class="form-group">
-            <label asp-for="Estado" class="control-label"></label>
-            <input asp-for="Estado" class="form-control" />
-            <span asp-validation-for="Estado" class="text-danger"></span>
-        </div>
+        <input type="hidden" asp-for="Estado" value="Activo" />
+
     </div>
 
     <div class="modal-footer">

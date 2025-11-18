@@ -25,12 +25,18 @@
         <hr />
 
         <div class="row align-items-end">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <label class="control-label">Producto</label>
                 <select id="select-producto" asp-items="ViewBag.Productos" class="form-control">
                     <option value="">-- Seleccione un producto --</option>
                 </select>
             </div>
+
+            <div class="col-md-2">
+                <label class="control-label">Stock Disp.</label>
+                <input id="input-stock" type="text" class="form-control" readonly style="background-color: #e9ecef; font-weight: bold;" />
+            </div>
+
             <div class="col-md-2">
                 <label class="control-label">Cantidad</label>
                 <input id="input-cantidad" type="number" value="1" min="1" class="form-control" />
@@ -39,7 +45,7 @@
                 <label class="control-label">Precio Unit.</label>
                 <input id="input-precio" type="text" class="form-control" readonly />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <button type="button" id="btn-agregar-item" class="btn btn-primary">Agregar al Carrito</button>
             </div>
         </div>
@@ -92,15 +98,24 @@
             // -- Evento 1: Cuando se selecciona un producto del dropdown --
             $('#select-producto').change(function () {
                 var productoId = $(this).val();
+                
                 if (productoId) {
                     $.get('/Venta/GetProductoDetails', { id: productoId }, function (data) {
                         // Mostramos el precio con COMA
                         $('#input-precio').val(data.precioVenta.toFixed(2).replace('.', ','));
+                        
+                        // NUEVO: Asignar stock al input visual
+                        $('#input-stock').val(data.stockActual);
+                        
+                        // Opcional: Ajustar el máximo del input cantidad para no vender más de lo que hay
+                        $('#input-cantidad').attr('max', data.stockActual);
+
                     }).fail(function() {
                         alert('Error al obtener los detalles del producto.');
                     });
                 } else {
                     $('#input-precio').val('');
+                    $('#input-stock').val(''); // Limpiar stock si se deselecciona
                 }
             });
 
@@ -109,8 +124,11 @@
                 var productoId = $('#select-producto').val();
                 var cantidad = parseInt($('#input-cantidad').val());
                 // Leemos el valor con COMA y lo convertimos a número (con punto)
-                var precio = parseFloat($('#input-precio').val().replace(',', '.')); 
+                var precio = parseFloat($('#input-precio').val().replace(',', '.'));
                 var nombre = $('#select-producto option:selected').text();
+                
+                // NUEVO: Leer stock disponible para validación en cliente
+                var stockDisponible = parseInt($('#input-stock').val());
 
                 // Validaciones
                 if (!productoId) {
@@ -121,6 +139,12 @@
                     alert('Debe ingresar una cantidad válida.');
                     return;
                 }
+                // Validación extra de stock
+                if (!isNaN(stockDisponible) && cantidad > stockDisponible) {
+                    alert('La cantidad no puede superar el stock disponible (' + stockDisponible + ').');
+                    return;
+                }
+
                 if (isNaN(precio)) {
                     // Validamos que el input de precio no esté vacío o mal escrito
                     alert('El precio no es válido. Asegúrese de usar comas para decimales.');
@@ -133,11 +157,10 @@
                 }
 
                 var subtotal = cantidad * precio;
-
                 // Usamos toLocaleString para mostrar comas en la tabla del carrito
                 var precioDisplay = precio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 var subtotalDisplay = subtotal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
+                
                 // Almacenamos los números (con punto) en 'data-'
                 var fila = `
                     <tr data-product-id="${productoId}" 
@@ -148,11 +171,13 @@
                         
                         <td>${nombre}</td>
                         <td>${cantidad}</td>
-                        <td>${precioDisplay}</td> <td>${subtotalDisplay}</td> <td>
+                        <td>${precioDisplay}</td>
+                        <td>${subtotalDisplay}</td>
+                        <td>
                             <button type="button" class="btn btn-danger btn-sm btn-remover-item">Quitar</button>
                         </td>
                     </tr>`;
-
+                
                 $('#carrito-items').append(fila);
                 itemsEnCarrito.push(productoId);
                 actualizarTotal();
@@ -178,8 +203,8 @@
                     var fila = $(this);
                     
                     // Convertimos los números a strings con COMA para el backend
-                    var precioString = fila.data('precio').toString().replace('.', ',');   // <-- CAMBIO
-                    var subtotalString = fila.data('subtotal').toString().replace('.', ','); // <-- CAMBIO
+                    var precioString = fila.data('precio').toString().replace('.', ',');
+                    var subtotalString = fila.data('subtotal').toString().replace('.', ',');
 
                     $('#hidden-items-container').append(
                         `<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`
@@ -191,12 +216,11 @@
                         `<input type="hidden" name="Items[${index}].Cantidad" value="${fila.data('cantidad')}" />`
                     );
                     $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${precioString}" />` // <-- CAMBIO
+                        `<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${precioString}" />`
                     );
                     $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].Subtotal" value="${subtotalString}" />` // <-- CAMBIO
+                        `<input type="hidden" name="Items[${index}].Subtotal" value="${subtotalString}" />`
                     );
-
                     index++;
                 });
 
@@ -214,11 +238,11 @@
                 $('#carrito-items tr').each(function () {
                     totalVenta += parseFloat($(this).data('subtotal'));
                 });
-
                 // Mostramos el total con COMA
-                $('#display-total').text(totalVenta.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); // <-- CAMBIO
+                $('#display-total').text(totalVenta.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                
                 // Enviamos el total con COMA
-                $('#hidden-total').val(totalVenta.toString().replace('.', ',')); // <-- CAMBIO
+                $('#hidden-total').val(totalVenta.toString().replace('.', ','));
             }
 
             // -- Función para limpiar los campos de producto --
@@ -226,6 +250,7 @@
                 $('#select-producto').val('');
                 $('#input-cantidad').val('1');
                 $('#input-precio').val('');
+                $('#input-stock').val(''); // Limpiamos también el stock
             }
         });
     </script>

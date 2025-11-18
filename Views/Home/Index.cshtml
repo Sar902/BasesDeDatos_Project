@@ -1,98 +1,67 @@
 ﻿@{
-    ViewData["Title"] = "";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div id="wrapper" class="d-flex">
-
-    <!-- SIDEBAR -->
-    <nav id="sidebar-wrapper">
-    
-      <div class="sidebar-heading text-center py-4 fw-bold fs-4">Sistema de Ventas</div>
-        <ul class="list-group list-group-flush">
-            <li><a asp-controller="Producto" asp-action="Index" class="list-group-item">Productos</a></li>
-            <li><a asp-controller="Categoria" asp-action="Index" class="list-group-item">Categorías</a></li>
-            <li><a asp-controller="Inventario" asp-action="Index" class="list-group-item">Inventario</a></li>
-            <li><a asp-controller="Venta" asp-action="Index" class="list-group-item">Ventas</a></li>
-            <li><a asp-controller="DetalleVenta" asp-action="Index" class="list-group-item">Detalle venta</a></li>
-            <li><a asp-controller="Proveedor" asp-action="Index" class="list-group-item">Proveedores</a></li>
-           <!-- <li><a asp-controller="Perdida" asp-action="Index" class="list-group-item">Pérdidas</a></li>  -->
-            <li><a asp-controller="DetallePerdida" asp-action="Index" class="list-group-item">Detalle Pérdidas</a></li>
-            <li><a asp-controller="SolicitudDevolucion" asp-action="Index" class="list-group-item">Devoluciones</a></li>
-            <li><a asp-controller="DetalleSolicitudDevolucion" asp-action="Index" class="list-group-item">Detalle devoluciones</a></li>
-
-            <!-- Botón modo oscuro dentro del sidebar -->
-               <li><button id="darkModeToggle" class="btn-sidebar mt-3">Modo Oscuro</button></li>
-        </ul>
-    </nav>
-    <button id="menu-toggle" class="btn btn-sidebar">☰</button>
-    <!-- CONTENIDO PRINCIPAL -->
-    <div id="page-content-wrapper">
-
-        <!-- Dashboard Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-sm-6 col-md-3">
-                <div class="card dashboard-box text-center p-3">
-                  <i class="bi bi-box-seam display-4 mb-2"></i>
-                    <h6>Total Productos</h6>
-                    <p class="fw-bold">@ViewBag.TotalProductos</p>
-                </div>
-            </div>
-            <div class="col-sm-6 col-md-3">
-                <div class="card dashboard-box text-center p-3">
-                 <i class="bi bi-currency-dollar display-4 mb-2"></i>
-                    <h6>Total Ventas</h6>
-                    <p class="fw-bold">$@ViewBag.TotalVentas</p>
-                </div>
-            </div>
-            <div class="col-sm-6 col-md-3">
-                <div class="card dashboard-box text-center p-3">
-                <i class="bi bi-exclamation-triangle display-4 mb-2"></i>
-                    <h6>Pérdidas del mes</h6>
-                    <p class="fw-bold">@ViewBag.PerdidasMes</p>
-                </div>
-            </div>
-            <div class="col-sm-6 col-md-3">
-                <div class="card dashboard-box text-center p-3">
-                 <i class="bi bi-people display-4 mb-2"></i>
-                    <h6>Proveedores activos</h6>
-                    <p class="fw-bold">@ViewBag.ProveedoresActivosCount</p>
-                </div>
-            </div>
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-md-3">
+        <div class="card dashboard-box text-center p-3 h-100 shadow-sm">
+            <i class="bi bi-box-seam display-4 mb-2 text-primary"></i>
+            <h6 class="text-muted">Total Productos</h6>
+            <p class="fw-bold fs-4 mb-0">@ViewBag.TotalProductos</p>
         </div>
-<!-- Tabla inventario bajo -->
- <div class="card inventario-bajo p-3 mt-4"> 
- <h5 class="mb-3">Productos con inventario bajo</h5> 
- <div class="table-responsive"> <table class="table table-hover align-middle"> 
- <thead class="table-light rounded-top"> 
- <tr> <th>Producto</th> 
- <th>Stock disponible</th> 
- </tr> 
- </thead>
-  <tbody> @foreach (var item in ViewBag.InventarioBajo)
-   { <tr class="@((item.CantidadDisponible < 5) ? "table-danger" : "")"> 
-   <td>@item.IdProductoNavigation.Nombre</td> <td>@item.CantidadDisponible</td> </tr> } 
-   </tbody>
-    </table>
-     </div> 
-     </div>
+    </div>
+    
+    <div class="col-sm-6 col-md-3">
+        <div class="card dashboard-box text-center p-3 h-100 shadow-sm">
+            <i class="bi bi-currency-dollar display-4 mb-2 text-success"></i>
+            <h6 class="text-muted">Total Ventas</h6>
+            <p class="fw-bold fs-4 mb-0">$@ViewBag.TotalVentas</p>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-md-3">
+        <div class="card dashboard-box text-center p-3 h-100 shadow-sm">
+            <i class="bi bi-exclamation-triangle display-4 mb-2 text-danger"></i>
+            <h6 class="text-muted">Pérdidas del mes</h6>
+            <p class="fw-bold fs-4 mb-0">@ViewBag.PerdidasMes</p>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-md-3">
+        <div class="card dashboard-box text-center p-3 h-100 shadow-sm">
+            <i class="bi bi-people display-4 mb-2 text-info"></i>
+            <h6 class="text-muted">Proveedores Activos</h6>
+            <p class="fw-bold fs-4 mb-0">@ViewBag.ProveedoresActivosCount</p>
+        </div>
+    </div>
+</div>
 
-
-    </div> <!-- /page-content-wrapper -->
-</div> <!-- /wrapper -->
-
-<!-- Scripts -->
-<script>
-    // Toggle sidebar
-    const toggleBtnMenu = document.getElementById('menu-toggle');
-    const wrapper = document.getElementById('wrapper');
-    toggleBtnMenu.addEventListener('click', () => {
-        wrapper.classList.toggle('toggled');
-    });
-
-    // Dark mode
-    const toggleBtnDark = document.getElementById('darkModeToggle');
-    toggleBtnDark.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        toggleBtnDark.textContent = document.body.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
-    });
-</script>
+<div class="card border-0 shadow-sm mt-4"> 
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 text-secondary"><i class="bi bi-graph-down-arrow me-2"></i>Productos con inventario bajo</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive"> 
+            <table class="table table-hover align-middle mb-0"> 
+                <thead class="table-light"> 
+                    <tr> 
+                        <th class="ps-4">Producto</th> 
+                        <th>Stock disponible</th> 
+                    </tr> 
+                </thead>
+                <tbody> 
+                    @if (ViewBag.InventarioBajo != null)
+                    {
+                        foreach (var item in ViewBag.InventarioBajo)
+                        { 
+                            <tr class="@((item.CantidadDisponible < 5) ? "table-danger" : "")"> 
+                                <td class="ps-4 fw-bold">@item.IdProductoNavigation.Nombre</td> 
+                                <td>@item.CantidadDisponible</td> 
+                            </tr> 
+                        }
+                    }
+                </tbody>
+            </table>
+        </div> 
+    </div>
+</div>
