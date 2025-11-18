@@ -107,6 +107,8 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Nombre,Contacto,Estado")] Proveedor proveedor)
         {
+            proveedor.Estado = "Activo";
+
             // ✔ Validación: evitar duplicados por nombre
             bool existe = await _context.Proveedor.AnyAsync(p => p.Nombre == proveedor.Nombre);
             if (existe)

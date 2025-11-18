@@ -1,32 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ashle\\ProyectoSistemaInventarioNuevo\\ProyectoSistemaInventarioNuevo.csproj": {}
+    "C:\\Users\\User\\BD\\BasesDeDatos_Project\\ProyectoSistemaInventarioNuevo.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ashle\\ProyectoSistemaInventarioNuevo\\ProyectoSistemaInventarioNuevo.csproj": {
+    "C:\\Users\\User\\BD\\BasesDeDatos_Project\\ProyectoSistemaInventarioNuevo.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ashle\\ProyectoSistemaInventarioNuevo\\ProyectoSistemaInventarioNuevo.csproj",
+        "projectUniqueName": "C:\\Users\\User\\BD\\BasesDeDatos_Project\\ProyectoSistemaInventarioNuevo.csproj",
         "projectName": "ProyectoSistemaInventarioNuevo",
-        "projectPath": "C:\\Users\\ashle\\ProyectoSistemaInventarioNuevo\\ProyectoSistemaInventarioNuevo.csproj",
-        "packagesPath": "C:\\Users\\ashle\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ashle\\ProyectoSistemaInventarioNuevo\\obj\\",
+        "projectPath": "C:\\Users\\User\\BD\\BasesDeDatos_Project\\ProyectoSistemaInventarioNuevo.csproj",
+        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\User\\BD\\BasesDeDatos_Project\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\ashle\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

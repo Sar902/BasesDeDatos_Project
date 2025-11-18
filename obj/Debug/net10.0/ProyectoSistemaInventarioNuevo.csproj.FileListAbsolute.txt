@@ -706,7 +706,6 @@ C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\rjsmcshtml.dswa.cache.js
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\scopedcss\bundle\ProyectoSistemaInventarioNuevo.styles.css
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\scopedcss\projectbundle\ProyectoSistemaInventarioNuevo.bundle.scp.css
-C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-mr6nqb54rz-mr6nqb54rz.gz
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\compressed\guf07xy9ko-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\compressed\yzw6lkk2dg-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\compressed\115dx3rw19-{0}-t1cqhe9u97-t1cqhe9u97.gz
@@ -782,3 +781,4 @@ C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ProyectoSistemaInventari
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ProyectoSistemaInventarioNuevo.genruntimeconfig.cache
 C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\ref\ProyectoSistemaInventarioNuevo.dll
 C:\Users\ashle\ProyectoSistemaInventarioNuevo\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-04p0zjiz5f-04p0zjiz5f.gz
+C:\Users\User\BD\BasesDeDatos_Project\obj\Debug\net10.0\compressed\10ias8xvl3-{0}-04p0zjiz5f-04p0zjiz5f.gz

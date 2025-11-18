@@ -103,17 +103,19 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
 
 
         // GET: Venta/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            // Creamos el ViewModel vacío
             var viewModel = new VentaViewModel();
 
-            // También enviamos la lista de todos los productos a la vista
-            // para que el usuario pueda elegirlos.
-            // Usamos la vista 'VProducto' que ya tienes
-            ViewData["Productos"] = new SelectList(_context.VProducto, "IdProducto", "Nombre");
+            // REGLA: En el model crear de venta se debe ver solo los productos que tengan stock
+            var productosConStock = await _context.VProducto
+                                            .Where(p => p.Cantidad > 0)
+                                            .OrderBy(p => p.Nombre)
+                                            .ToListAsync();
+
+            ViewData["Productos"] = new SelectList(productosConStock, "IdProducto", "Nombre");
             
-            return View(viewModel); // Pasamos el ViewModel a la vista
+            return View(viewModel);
         }
 
         // POST: Venta/Create

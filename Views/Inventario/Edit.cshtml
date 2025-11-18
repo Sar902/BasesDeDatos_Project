@@ -25,44 +25,43 @@
         
         <div class="form-group">
             <label asp-for="IdProveedor" class="control-label">Proveedor</label>
-            <select asp-for="IdProveedor" class ="form-control" asp-items="ViewBag.IdProveedor"></select>
-            <span asp-validation-for="IdProveedor" class="text-danger"></span>
+            <select asp-for="IdProveedor" class ="form-control" asp-items="ViewBag.IdProveedor" disabled></select>
+            <input type="hidden" asp-for="IdProveedor" />
         </div>
 
         <div class="form-group">
             <label asp-for="Cantidad" class="control-label">Cantidad Total del Lote</label>
-            <input asp-for="Cantidad" class="form-control" type="number" />
-            <span asp-validation-for="Cantidad" class="text-danger"></span>
+            <input asp-for="Cantidad" class="form-control" type="number" readonly />
         </div>
 
         <div class="form-group">
             <label asp-for="CantidadDisponible" class="control-label">Cantidad Disponible</label>
-            <input asp-for="CantidadDisponible" class="form-control" type="number" />
-            <span asp-validation-for="CantidadDisponible" class="text-danger"></span>
+            <input asp-for="CantidadDisponible" class="form-control" type="number" readonly />
         </div>
 
         <div class="form-group">
             <label asp-for="PrecioCompra" class="control-label">Precio Compra</label>
-            <input asp-for="PrecioCompra" class="form-control" />
+            <input asp-for="PrecioCompra" class="form-control" 
+                   readonly="@(Model.CantidadDisponible > 0 ? "readonly" : null)" />
             <span asp-validation-for="PrecioCompra" class="text-danger"></span>
+            @if(Model.CantidadDisponible > 0) {
+                <small class="text-muted">Solo editable cuando el lote esté agotado.</small>
+            }
         </div>
         
         <div class="form-group">
             <label asp-for="FechaEntrada" class="control-label"></label>
-            <input asp-for="FechaEntrada" class="form-control" type="date" />
-            <span asp-validation-for="FechaEntrada" class="text-danger"></span>
+            <input asp-for="FechaEntrada" class="form-control" type="date" readonly />
         </div>
 
         <div class="form-group">
             <label asp-for="FechaSalida" class="control-label"></label>
-            <input asp-for="FechaSalida" class="form-control" type="date" />
-            <span asp-validation-for="FechaSalida" class="text-danger"></span>
+            <input asp-for="FechaSalida" class="form-control" type="date" readonly />
         </div>
         
         <div class="form-group">
             <label asp-for="Estado" class="control-label"></label>
-            <input asp-for="Estado" class="form-control" />
-            <span asp-validation-for="Estado" class="text-danger"></span>
+            <input asp-for="Estado" class="form-control" readonly />
         </div>
     </div>
 
