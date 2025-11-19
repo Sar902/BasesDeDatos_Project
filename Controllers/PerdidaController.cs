@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoSistemaInventarioNuevo.Models;
+using ProyectoSistemaInventarioNuevo.ViewModels;
 
 namespace ProyectoSistemaInventarioNuevo.Controllers
 {
@@ -18,71 +18,81 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
-        // ---------------------------------------------------------
-        // HELPER: Detectar si la petición es HTMX (Modal)
-        // ---------------------------------------------------------
         private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
 
         // GET: Perdida
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            // CORRECCIÓN: Quitamos el .Include(IdInventarioNavigation) porque no existe en este modelo
-            var perdidas = await _context.Perdida.ToListAsync();
-
-            // Si es petición HTMX, devolvemos SOLO la tabla (sin layout)
-            if (IsHtmxRequest())
-            {
-                return PartialView(perdidas);
-            }
-
-            // Si es petición normal, devolvemos la vista completa
-            return View(perdidas);
+            return View();
         }
 
-        // GET: Perdida/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: HTMX lista de pérdidas
+        public async Task<IActionResult> GetPerdidaList()
         {
-            if (id == null) return NotFound();
-
-            var perdidum = await _context.Perdida
-                .FirstOrDefaultAsync(m => m.IdPerdida == id);
-                
-            if (perdidum == null) return NotFound();
-
-            if (IsHtmxRequest()) return PartialView(perdidum);
-
-            return View(perdidum);
+            var perdidas = await _context.Perdida.ToListAsync();
+            return PartialView("_PerdidaList", perdidas);
         }
 
         // GET: Perdida/Create
         public IActionResult Create()
         {
-            if (IsHtmxRequest()) return PartialView();
-            return View();
+            var vm = new PerdidaCreateViewModel
+            {
+                Fecha = DateTime.Now,
+                Items = new List<PerdidaDetalleViewModel>()
+            };
+            return PartialView("Create", vm);
         }
 
         // POST: Perdida/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        // CORRECCIÓN: Eliminado IdSolicitudDevolucion del Bind porque no está en el modelo
-        public async Task<IActionResult> Create([Bind("IdPerdida,Fecha,Total,Motivo")] Perdidum perdidum)
+        public async Task<IActionResult> Create(PerdidaCreateViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return PartialView("Create", model);
+
+            var perdidum = new Perdidum
             {
-                _context.Add(perdidum);
-                await _context.SaveChangesAsync();
-                
-                // Respuesta HTMX para cerrar modal
-                if (IsHtmxRequest())
+                Fecha = model.Fecha,
+                Motivo = model.Motivo,
+                Total = 0m
+            };
+
+            _context.Perdida.Add(perdidum);
+            await _context.SaveChangesAsync();
+
+            decimal total = 0m;
+            foreach (var item in model.Items)
+            {
+                var inventario = await _context.Inventario.FirstOrDefaultAsync(i => i.IdProducto == item.IdProducto);
+                if (inventario == null) continue;
+
+                if (item.CantidadPerdida > inventario.CantidadDisponible)
+                    item.CantidadPerdida = inventario.CantidadDisponible;
+
+                var detalle = new DetallePerdidum
                 {
-                     Response.Headers.Add("HX-Trigger", "htmx:closeModal"); 
-                     return Content("", "text/html");
-                }
-                return RedirectToAction(nameof(Index));
+                    IdPerdida = perdidum.IdPerdida,
+                    IdProducto = item.IdProducto,
+                    CantidadPerdida = item.CantidadPerdida,
+                    PrecioCompraUnitario = inventario.PrecioCompra,
+                    SubtotalPerdida = item.CantidadPerdida * inventario.PrecioCompra
+                };
+
+                _context.DetallePerdida.Add(detalle);
+                inventario.CantidadDisponible -= item.CantidadPerdida;
+                _context.Inventario.Update(inventario);
+
+                total += detalle.SubtotalPerdida;
             }
-            
-            if (IsHtmxRequest()) return PartialView(perdidum);
-            return View(perdidum);
+
+            perdidum.Total = total;
+            _context.Perdida.Update(perdidum);
+            await _context.SaveChangesAsync();
+
+            Response.Headers.Add("HX-Trigger", "refreshPerdidaList, htmx:closeModal");
+            return Content("");
         }
 
         // GET: Perdida/Edit/5
@@ -92,18 +102,16 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
 
             var perdidum = await _context.Perdida.FindAsync(id);
             if (perdidum == null) return NotFound();
-            
-            if (IsHtmxRequest()) return PartialView(perdidum);
+
+            if (IsHtmxRequest()) return PartialView("Edit", perdidum);
             return View(perdidum);
         }
 
-        // POST: Perdida/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdPerdida,Fecha,Total,Motivo")] Perdidum perdidum)
+        public async Task<IActionResult> Edit(int id, [Bind("IdPerdida,Fecha,Motivo,Total")] Perdidum perdidum)
         {
             if (id != perdidum.IdPerdida) return NotFound();
-
             if (ModelState.IsValid)
             {
                 try
@@ -113,19 +121,19 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!PerdidumExists(perdidum.IdPerdida)) return NotFound();
+                    if (!_context.Perdida.Any(e => e.IdPerdida == id)) return NotFound();
                     else throw;
                 }
-                
+
                 if (IsHtmxRequest())
                 {
-                     Response.Headers.Add("HX-Trigger", "htmx:closeModal");
-                     return Content("", "text/html");
+                    Response.Headers.Add("HX-Trigger", "htmx:closeModal");
+                    return Content("", "text/html");
                 }
                 return RedirectToAction(nameof(Index));
             }
-            
-            if (IsHtmxRequest()) return PartialView(perdidum);
+
+            if (IsHtmxRequest()) return PartialView("Edit", perdidum);
             return View(perdidum);
         }
 
@@ -133,16 +141,13 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
-
-            var perdidum = await _context.Perdida
-                .FirstOrDefaultAsync(m => m.IdPerdida == id);
+            var perdidum = await _context.Perdida.FindAsync(id);
             if (perdidum == null) return NotFound();
 
-            if (IsHtmxRequest()) return PartialView(perdidum);
+            if (IsHtmxRequest()) return PartialView("Delete", perdidum);
             return View(perdidum);
         }
 
-        // POST: Perdida/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -153,18 +158,14 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                 _context.Perdida.Remove(perdidum);
                 await _context.SaveChangesAsync();
             }
-            
+
             if (IsHtmxRequest())
             {
-                 Response.Headers.Add("HX-Trigger", "htmx:closeModal");
-                 return Content("", "text/html");
+                Response.Headers.Add("HX-Trigger", "htmx:closeModal");
+                return Content("", "text/html");
             }
-            return RedirectToAction(nameof(Index));
-        }
 
-        private bool PerdidumExists(int id)
-        {
-            return _context.Perdida.Any(e => e.IdPerdida == id);
+            return RedirectToAction(nameof(Index));
         }
     }
 }

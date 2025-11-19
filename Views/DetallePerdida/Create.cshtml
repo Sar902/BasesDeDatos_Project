@@ -1,4 +1,4 @@
-@model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaDetalleViewModel 
+@model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaDetalleViewModel
 @{ Layout = null; }
 
 <div class="modal-header">
@@ -11,28 +11,30 @@
           hx-post="@Url.Action("Create", "DetallePerdida")"
           hx-target="#modal-content-generic"
           hx-swap="innerHTML">
-        
         @Html.AntiForgeryToken()
-        
+
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+        <!-- Mostramos el Motivo como texto, no como input del detalle -->
         <div class="mb-3">
-            <label asp-for="Motivo" class="form-label">Motivo de la Pérdida</label>
-            <input asp-for="Motivo" class="form-control" />
-            <span asp-validation-for="Motivo" class="text-danger"></span>
+            <label class="form-label">Motivo</label>
+            <input type="text" class="form-control" value="@ViewBag.Motivo" readonly />
         </div>
-        
+
         <div class="mb-3">
             <label asp-for="IdProducto" class="form-label">Producto</label>
-            <select asp-for="IdProducto" class="form-select" asp-items="ViewBag.Productos">
+            <select asp-for="IdProducto" class="form-select" id="productoSelect">
                 <option value="">-- Seleccione --</option>
+                @foreach (var p in ((IEnumerable<dynamic>)ViewBag.Productos).GroupBy(p => p.Key).Select(g => g.First()))
+                {
+                    <option value="@p.Key" data-cantidad="@p.CantidadDisponible">@p.Nombre</option>
+                }
             </select>
-            <span asp-validation-for="IdProducto" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
             <label asp-for="CantidadPerdida" class="form-label">Cantidad</label>
-            <input asp-for="CantidadPerdida" class="form-control" type="number" min="1" />
+            <input asp-for="CantidadPerdida" type="number" class="form-control" min="1" id="cantidadInput" />
             <span asp-validation-for="CantidadPerdida" class="text-danger"></span>
         </div>
 
@@ -44,11 +46,20 @@
 </div>
 
 @section Scripts {
-    <script>
-        // Esto fuerza a jQuery Validation a reconocer el nuevo formulario
-        var form = document.querySelector('#modal-content-generic form');
-        if (form && window.jQuery && window.jQuery.validator) {
-            $.validator.unobtrusive.parse(form);
-        }
-    </script>
+<script>
+const selectProducto = document.getElementById('productoSelect');
+const inputCantidad = document.getElementById('cantidadInput');
+
+selectProducto.addEventListener('change', () => {
+    const opt = selectProducto.selectedOptions[0];
+    inputCantidad.max = opt ? opt.dataset.cantidad : 0;
+    if (inputCantidad.value > inputCantidad.max) inputCantidad.value = inputCantidad.max;
+});
+
+// Inicial
+if (selectProducto.value) {
+    const opt = selectProducto.selectedOptions[0];
+    inputCantidad.max = opt ? opt.dataset.cantidad : 0;
+}
+</script>
 }

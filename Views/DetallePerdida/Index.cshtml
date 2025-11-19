@@ -1,96 +1,25 @@
-@{
-    ViewData["Title"] = "Pérdidas";
-}
+@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Perdidum>
 
 <h1>Pérdidas</h1>
 
-<p>
-    <button class="btn btn-primary"
-            hx-get="@Url.Action("Create")"
-            hx-target="#modal-content-generic"
-            hx-swap="innerHTML">
-        Crear nueva pérdida
-    </button>
-
-    <button class="btn btn-secondary"
-            hx-get="@Url.Action("Index", "Perdida")"
-            hx-target="#modal-content-generic"
-            hx-swap="innerHTML">
-        Ver pérdidas generales
-    </button>
-</p>
-
-<table class="table table-striped">
-
-    <tbody id="detalleperdida-tbody"
-           hx-get="@Url.Action("GetDetallePerdidaList")"
-           hx-trigger="load, refreshDetallePerdidaList from:body"
-           hx-swap="innerHTML">
-        <tr><td colspan="6">Cargando...</td></tr>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Motivo</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var p in Model)
+        {
+            <tr>
+                <td>@p.IdPerdida</td>
+                <td>@p.Fecha.ToShortDateString()</td>
+                <td>@p.Motivo</td>
+                <td>@p.Total.ToString("C")</td>
+            </tr>
+        }
     </tbody>
 </table>
-
-<div id="modal-generic" class="modal fade" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content" id="modal-content-generic"></div>
-    </div>
-</div>
-
-@section Scripts {
-<script>
-    // Variable global para guardar la instancia del modal
-    let modalBootstrap = null;
-
-    document.body.addEventListener('htmx:afterSwap', (e) => {
-        // Solo actuamos si el contenido actualizado es el cuerpo del modal
-        if (e.target.id === "modal-content-generic") {
-            const modalEl = document.getElementById('modal-generic');
-            
-            // Verificar si ya existe una instancia, si no, crearla
-            if (!modalBootstrap) {
-                modalBootstrap = new bootstrap.Modal(modalEl);
-            }
-
-            // Solo mostramos el modal si NO está visible actualmente
-            // Esto evita el doble fondo oscuro cuando hay errores de validación
-            if (!modalEl.classList.contains('show')) {
-                modalBootstrap.show();
-            }
-        }
-    });
-
-    document.body.addEventListener('htmx:afterRequest', (e) => {
-        // Si el servidor manda la orden de cerrar
-        if (e.detail.xhr.getResponseHeader("HX-Trigger")?.includes("htmx:closeModal")) {
-            const modalEl = document.getElementById('modal-generic');
-            
-            // Buscar la instancia existente
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-            
-            // SOLUCIÓN FINAL AL FONDO OSCURO:
-            // A veces Bootstrap deja el backdrop pegado si HTMX elimina el DOM muy rápido.
-            // Esto asegura que se borren los backdrops residuales.
-            setTimeout(() => {
-                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style = '';
-            }, 200); // Pequeño retraso para dejar que la animación termine
-        }
-    });
-
-    // Limpiar la instancia cuando el modal se cierra completamente
-    const modalEl = document.getElementById('modal-generic');
-    modalEl.addEventListener('hidden.bs.modal', function () {
-        if(modalBootstrap) {
-            // Opcional: Destruir para limpiar memoria, o solo resetear variable
-            // modalBootstrap.dispose(); 
-            // modalBootstrap = null; 
-        }
-        // Limpieza de seguridad extra
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    });
-</script>
-}

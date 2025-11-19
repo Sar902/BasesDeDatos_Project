@@ -21,7 +21,7 @@ public partial class DetallePerdidum
     public decimal PrecioCompraUnitario { get; set; }
 
    [Display(Name = "Subtotal Pérdida")]
-    public decimal? SubtotalPerdida { get; set; }
+   public decimal SubtotalPerdida { get; set; } 
 
     public virtual Perdidum IdPerdidaNavigation { get; set; } = null!;
 

@@ -1,47 +1,31 @@
-@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Perdidum>
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Pérdidas";
 }
 
-<h1>Index</h1>
+<h1>Pérdidas</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <button class="btn btn-primary"
+            hx-get="@Url.Action("Create")"
+            hx-target="#modal-content-generic"
+            hx-swap="innerHTML">
+        <i class="bi bi-plus-circle"></i> Crear nueva pérdida
+    </button>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Fecha)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Total)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Motivo)
-            </th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Motivo</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Fecha)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Total)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Motivo)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdPerdida">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdPerdida">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdPerdida">Delete</a>
-            </td>
-        </tr>
-}
+    <tbody id="perdida-tbody"
+           hx-get="@Url.Action("GetPerdidaList")"
+           hx-trigger="load, refreshPerdidaList from:body"
+           hx-swap="innerHTML">
+        <tr><td colspan="4">Cargando...</td></tr>
     </tbody>
 </table>
