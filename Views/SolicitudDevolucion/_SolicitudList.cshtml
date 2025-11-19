@@ -1,0 +1,33 @@
+@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.VSoltum>
+
+
+
+@foreach (var item in Model) {
+    <tr>
+        <td>@Html.DisplayFor(modelItem => item.IdSolicitudDevolucion)</td>
+        <td>@Html.DisplayFor(modelItem => item.Proveedor)</td>
+        <td>@Html.DisplayFor(modelItem => item.Observaciones)</td>
+        <td>@Html.DisplayFor(modelItem => item.Fecha)</td>
+        <td>@Html.DisplayFor(modelItem => item.Estado)</td>
+        <td>
+            <button class="btn btn-primary btn-sm"
+               hx-get="@Url.Action("Edit", new { id = item.IdSolicitudDevolucion })"
+               hx-target="#modal-content-generic"
+               hx-swap="innerHTML">
+                Edit
+            </button> |
+            <button class="btn btn-info btn-sm"
+               hx-get="@Url.Action("Details", new { id = item.IdSolicitudDevolucion })"
+               hx-target="#modal-content-generic"
+               hx-swap="innerHTML">
+                Details
+            </button> |
+            <button class="btn btn-danger btn-sm"
+               hx-get="@Url.Action("Delete", new { id = item.IdSolicitudDevolucion })"
+               hx-target="#modal-content-generic"
+               hx-swap="innerHTML">
+                Delete
+            </button>
+        </td>
+    </tr>
+}

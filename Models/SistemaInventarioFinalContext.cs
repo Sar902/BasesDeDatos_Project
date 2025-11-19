@@ -30,8 +30,10 @@ public partial class SistemaInventarioFinalContext : DbContext
     // Vistas
     public virtual DbSet<VDetallePerdidum> VDetallePerdidum { get; set; }
     public virtual DbSet<VDetalleVentum> VDetalleVentum { get; set; }
+    public virtual DbSet<VDetalleSoltum> VDetalleSoltum { get; set; }
     public virtual DbSet<VProducto> VProducto { get; set; }
     public virtual DbSet<VVentum> VVentum { get; set; }
+    public virtual DbSet<VSoltum> VSoltum { get; set; }
 
 
    protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -225,6 +227,14 @@ modelBuilder.Entity<VDetalleVentum>(entity =>
     entity.Property(e => e.GananciaSubtotal).HasColumnType("decimal(18,2)");
 });
 
+modelBuilder.Entity<VDetalleSoltum>(entity =>
+{
+    // Definir la PK ficticia
+    entity.HasKey(e => e.IdDetalleSolicitudDevolucion);
+
+    entity.ToView("v_DetalleSolicitud", "dbo");
+});
+
 modelBuilder.Entity<VProducto>(entity =>
 {
     // Definir la PK ficticia
@@ -247,6 +257,20 @@ modelBuilder.Entity<VVentum>(entity =>
     entity.Property(e => e.GananciaTotal).HasColumnType("decimal(18,2)");
 });
 
+modelBuilder.Entity<VSoltum>(entity =>
+{
+    // Definir la PK ficticia
+    entity.HasKey(e => e.IdSolicitudDevolucion);
+
+    entity.ToView("v_Solicitud", "dbo");
+
+    entity.Property(e => e.IdSolicitudDevolucion);
+    entity.Property(e => e.Proveedor);
+    entity.Property(e => e.Observaciones);
+    entity.Property(e => e.Fecha);
+    entity.Property(e => e.Estado);
+
+});
 
 }
 

@@ -1,48 +1,174 @@
-@model ProyectoSistemaInventarioNuevo.Models.SolicitudDevolucion
+@model ProyectoSistemaInventarioNuevo.ViewModels.SolicitudDevolucionViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Crear Solicitud de Devolución";
 }
 
-<h1>Create</h1>
+<h1>@ViewData["Title"]</h1>
 
-<h4>SolicitudDevolucion</h4>
 <hr />
+
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="IdInventario" class="control-label"></label>
-                <input asp-for="IdInventario" class="form-control" />
-                <span asp-validation-for="IdInventario" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Estado" class="control-label"></label>
-                <input asp-for="Estado" class="form-control" />
-                <span asp-validation-for="Estado" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Observaciones" class="control-label"></label>
-                <input asp-for="Observaciones" class="form-control" />
-                <span asp-validation-for="Observaciones" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Fecha" class="control-label"></label>
+    <form asp-action="Create" id="form-crear-solicitud">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="form-group">
+            <label asp-for="Observaciones" class="control-label"></label>
+            <input asp-for="Observaciones" class="form-control" />
+            <span asp-validation-for="Observaciones" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label class="control-label">Fecha</label>
                 <input asp-for="Fecha" class="form-control" />
                 <span asp-validation-for="Fecha" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
-</div>
+        </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+        <hr />
+
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <label class="control-label">Producto</label>
+                <select id="select-producto" asp-items="ViewBag.Productos" class="form-control">
+                    <option value="">-- Seleccione un producto --</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="control-label">Stock Disp.</label>
+                <input id="input-stock" type="text" class="form-control" readonly style="background-color: #e9ecef; font-weight: bold;" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="control-label">Cantidad Solicitada</label>
+                <input id="input-cantidad" type="number" value="1" min="1" class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="control-label">Precio Compra Unit.</label>
+                <input id="input-precio" type="text" class="form-control" readonly />
+            </div>
+
+            <div class="col-md-2">
+                <button type="button" id="btn-agregar-item" class="btn btn-primary">Agregar</button>
+            </div>
+        </div>
+
+        <hr />
+
+        <h3>Detalle de Solicitud</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad Solicitada</th>
+                    <th>Precio Compra Unit.</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="detalle-items"></tbody>
+        </table>
+
+        <div id="hidden-items-container"></div>
+
+        <div class="form-group mt-3">
+            <input type="submit" value="Guardar Solicitud" class="btn btn-success" />
+            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            var itemsEnSolicitud = [];
+
+            $('#select-producto').change(function () {
+                var productoId = $(this).val();
+                if (productoId) {
+                    $.get('/SolicitudDevolucion/GetProductoDetails', { id: productoId }, function (data) {
+                        $('#input-precio').val(data.precioCompra.toFixed(2).replace('.', ','));
+                        $('#input-stock').val(data.stockActual);
+                        $('#input-cantidad').attr('max', data.stockActual);
+                    });
+                } else {
+                    $('#input-precio').val('');
+                    $('#input-stock').val('');
+                }
+            });
+
+            $('#btn-agregar-item').click(function () {
+                var productoId = $('#select-producto').val();
+                var cantidad = parseInt($('#input-cantidad').val());
+                var precio = parseFloat($('#input-precio').val().replace(',', '.'));
+                var nombre = $('#select-producto option:selected').text();
+                var stockDisponible = parseInt($('#input-stock').val());
+
+                if (!productoId || isNaN(cantidad) || cantidad <= 0 || cantidad > stockDisponible || isNaN(precio)) {
+                    alert('Revise los datos del producto.');
+                    return;
+                }
+
+                if (itemsEnSolicitud.includes(productoId)) {
+                    alert('Este producto ya está en la solicitud.');
+                    return;
+                }
+
+                var fila = `
+                    <tr data-product-id="${productoId}" data-cantidad="${cantidad}" data-precio="${precio}" data-nombre="${nombre}">
+                        <td>${nombre}</td>
+                        <td>${cantidad}</td>
+                        <td>${precio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td><button type="button" class="btn btn-danger btn-sm btn-remover-item">Quitar</button></td>
+                    </tr>`;
+                $('#detalle-items').append(fila);
+                itemsEnSolicitud.push(productoId);
+                limpiarCamposProducto();
+            });
+
+            $('#detalle-items').on('click', '.btn-remover-item', function () {
+                var fila = $(this).closest('tr');
+                var productoId = fila.data('product-id').toString();
+                itemsEnSolicitud = itemsEnSolicitud.filter(id => id !== productoId);
+                fila.remove();
+            });
+
+            $('#form-crear-solicitud').submit(function (e) {
+                $('#hidden-items-container').empty();
+                var index = 0;
+
+                $('#detalle-items tr').each(function () {
+                    var fila = $(this);
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`
+                    );
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].CantidadSolicitada" value="${fila.data('cantidad')}" />`
+                    );
+                    $('#hidden-items-container').append(
+                        `<input type="hidden" name="Items[${index}].PrecioCompraUnitario" value="${fila.data('precio')}" />`
+                    );
+                    index++;
+                });
+
+                if (index === 0) {
+                    alert('Debe agregar al menos un producto.');
+                    e.preventDefault();
+                    return false;
+                }
+                return true;
+            });
+
+            function limpiarCamposProducto() {
+                $('#select-producto').val('');
+                $('#input-cantidad').val('1');
+                $('#input-precio').val('');
+                $('#input-stock').val('');
+            }
+        });
+    </script>
 }

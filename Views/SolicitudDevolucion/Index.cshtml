@@ -1,53 +1,35 @@
 @model IEnumerable<ProyectoSistemaInventarioNuevo.Models.SolicitudDevolucion>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Solicitudes de devolucion";
 }
 
-<h1>Index</h1>
+<h1>Listado de solicitudes de devolucion</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a class="btn btn-primary" asp-action="Create">
+        <i class="bi bi-plus-circle"></i> Registrar Nueva Solicitud de devolucion
+    </a>
 </p>
+
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.IdInventario)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Estado)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Observaciones)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Fecha)
-            </th>
+            <th>Nº De Solicitud de devolucion</th>
+            <th>Proveedor</th>
+            <th>Observaciones</th>
+            <th>Fecha</th>
+            <th>Estado</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdInventario)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Estado)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Observaciones)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Fecha)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdSolicitudDevolucion">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdSolicitudDevolucion">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdSolicitudDevolucion">Delete</a>
-            </td>
-        </tr>
-}
+
+    <tbody id="solicitud-tbody"
+        hx-get="@Url.Action("GetSolicitudesList")"
+        hx-trigger="load, refreshSolicitudesList from:body"
+        hx-swap="innerHTML">
+        <tr><td colspan="6">Cargando solicitudes...</td></tr>
     </tbody>
+
 </table>

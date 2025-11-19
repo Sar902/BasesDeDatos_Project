@@ -1,49 +1,52 @@
-@model ProyectoSistemaInventarioNuevo.Models.SolicitudDevolucion
+@model ProyectoSistemaInventarioNuevo.ViewModels.SoliEditViewModel
+@{ Layout = null; }
 
-@{
-    ViewData["Title"] = "Edit";
-}
+<div class="modal-header">
+    <h5 class="modal-title">Editar Solicitud de devolución</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
 
-<h1>Edit</h1>
+<form method="post"
+      hx-post="@Url.Action("Edit", new { id = Model.IdSolicitudDevolucion })"
+      hx-target="this"
+      hx-swap="outerHTML">
 
-<h4>SolicitudDevolucion</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="IdSolicitudDevolucion" />
-            <div class="form-group">
-                <label asp-for="IdInventario" class="control-label"></label>
-                <input asp-for="IdInventario" class="form-control" />
-                <span asp-validation-for="IdInventario" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Estado" class="control-label"></label>
-                <input asp-for="Estado" class="form-control" />
-                <span asp-validation-for="Estado" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Observaciones" class="control-label"></label>
-                <input asp-for="Observaciones" class="form-control" />
-                <span asp-validation-for="Observaciones" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Fecha" class="control-label"></label>
-                <input asp-for="Fecha" class="form-control" />
-                <span asp-validation-for="Fecha" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="IdSolicitudDevolucion" />
+
+    <div class="modal-body">
+
+        <!-- Observaciones -->
+        <div class="mb-3">
+            <label asp-for="Observaciones" class="form-label"></label>
+            <input asp-for="Observaciones" class="form-control" />
+            <span asp-validation-for="Observaciones" class="text-danger"></span>
+        </div>
+
+        <!-- Fecha -->
+        <div class="mb-3">
+            <label asp-for="Fecha" class="form-label"></label>
+            <input asp-for="Fecha" type="date" class="form-control" />
+            <span asp-validation-for="Fecha" class="text-danger"></span>
+        </div>
+
+        <!-- Estado -->
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label"></label>
+            
+            <select asp-for="Estado" class="form-select" asp-items="@(ViewData["Estados"] as IEnumerable<SelectListItem>)"></select>
+
+            <span asp-validation-for="Estado" class="text-danger"></span>
+        </div>
+
     </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    </div>
+</form>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
 }
