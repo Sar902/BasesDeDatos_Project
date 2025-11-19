@@ -136,19 +136,32 @@ public async Task<IActionResult> Create(int idPerdida, PerdidaDetalleViewModel v
     }
 
     // Guardamos detalle
-    var detalle = new DetallePerdidum
-    {
-        IdPerdida = idPerdida,
-        IdProducto = vm.IdProducto,
-        CantidadPerdida = vm.CantidadPerdida,
-        PrecioCompraUnitario = inventario.PrecioCompra,
-        SubtotalPerdida = vm.CantidadPerdida * inventario.PrecioCompra
-    };
+   var detalle = new DetallePerdidum
+{
+    IdPerdida = idPerdida,
+    IdProducto = vm.IdProducto,
+    CantidadPerdida = vm.CantidadPerdida,
+    PrecioCompraUnitario = inventario.PrecioCompra
+    // SubtotalPerdida se calcula automáticamente en la BD
+};
+
     _context.DetallePerdida.Add(detalle);
 
     // Ajustamos inventario
     inventario.CantidadDisponible -= vm.CantidadPerdida;
+  
     _context.Inventario.Update(inventario);
+
+    var producto = await _context.Producto.FindAsync(vm.IdProducto);
+if (producto != null)
+{
+    producto.Cantidad -= vm.CantidadPerdida;
+
+    if (producto.Cantidad < 0)
+        producto.Cantidad = 0; // por seguridad
+
+    _context.Producto.Update(producto);
+}
 
     // Actualizamos total de la pérdida
     var perdida = await _context.Perdida.FindAsync(idPerdida);
@@ -170,108 +183,136 @@ public async Task<IActionResult> Create(int idPerdida, PerdidaDetalleViewModel v
         // ===============================
         // Edit
         // ===============================
-        public async Task<IActionResult> Edit(int id)
+         public async Task<IActionResult> Edit(int id)
+    {
+        var detalle = await _context.DetallePerdida
+            .Include(d => d.IdProductoNavigation)
+            .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
+
+        if (detalle == null) return NotFound();
+
+        var vm = new DetallePerdidaViewModel
         {
-            var detalle = await _context.DetallePerdida.FindAsync(id);
-            if (detalle == null) return NotFound();
+            IdDetallePerdida = detalle.IdDetallePerdida,
+            IdProducto = detalle.IdProducto,
+            CantidadPerdida = detalle.CantidadPerdida
+        };
 
-            await PopulateProductos(detalle.IdProducto);
+        ViewBag.Productos = new SelectList(
+            _context.Producto.Select(p => new { p.IdProducto, p.Nombre }),
+            "IdProducto", "Nombre", detalle.IdProducto
+        );
 
-         var vm = new PerdidaDetalleViewModel
-       {
-          IdProducto = detalle.IdProducto,
-          CantidadPerdida = detalle.CantidadPerdida
-      };
+        return PartialView("Edit", vm);
+    }
 
-         ViewBag.Motivo = detalle.IdPerdidaNavigation?.Motivo;
+    // POST: Detalle/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, DetallePerdidaViewModel model)
+    {
+        if (id != model.IdDetallePerdida) return BadRequest();
 
+        var detalle = await _context.DetallePerdida
+            .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
+        if (detalle == null) return NotFound();
 
-            ViewBag.IdDetalle = id;
-            ViewBag.IdPerdida = detalle.IdPerdida;
-            return PartialView("Edit", vm);
+        // Inventarios y productos
+        var inventarioAnterior = await _context.Inventario
+            .FirstOrDefaultAsync(i => i.IdProducto == detalle.IdProducto);
+        var inventarioNuevo = await _context.Inventario
+            .FirstOrDefaultAsync(i => i.IdProducto == model.IdProducto);
+
+        var productoAnterior = await _context.Producto.FindAsync(detalle.IdProducto);
+        var productoNuevo = await _context.Producto.FindAsync(model.IdProducto);
+
+        if (inventarioAnterior == null || inventarioNuevo == null)
+            return BadRequest("Inventario no encontrado.");
+
+        // 1) Revertir la pérdida anterior
+        inventarioAnterior.CantidadDisponible += detalle.CantidadPerdida;
+        productoAnterior.Cantidad += detalle.CantidadPerdida;
+
+        // 2) Validar stock del nuevo producto
+        if (model.CantidadPerdida > inventarioNuevo.CantidadDisponible)
+        {
+            ModelState.AddModelError("", 
+                $"No hay suficiente inventario para {productoNuevo.Nombre}. Disponible: {inventarioNuevo.CantidadDisponible}");
+            
+            ViewBag.Productos = new SelectList(
+                _context.Producto.Select(p => new { p.IdProducto, p.Nombre }),
+                "IdProducto", "Nombre", model.IdProducto
+            );
+
+            return PartialView("Edit", model);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, int idPerdida, PerdidaDetalleViewModel vm)
+        // 3) Aplicar nuevo stock
+        inventarioNuevo.CantidadDisponible -= model.CantidadPerdida;
+        productoNuevo.Cantidad -= model.CantidadPerdida;
+
+        // 4) Actualizar detalle
+        detalle.IdProducto = model.IdProducto;
+        detalle.CantidadPerdida = model.CantidadPerdida;
+
+        await _context.SaveChangesAsync();
+
+        Response.Headers["HX-Trigger"] = "refreshDetallePerdidaList, htmx:closeModal";
+        return Content("");
+    }
+
+    // GET Delete
+    public async Task<IActionResult> Delete(int id)
+    {
+        var detalle = await _context.DetallePerdida
+            .Include(d => d.IdProductoNavigation)
+            .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
+        if (detalle == null) return NotFound();
+
+        ViewBag.IdPerdida = detalle.IdPerdida;
+        return PartialView("Delete", detalle);
+    }
+
+    // POST Delete
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var detalle = await _context.DetallePerdida.FindAsync(id);
+        if (detalle == null) return NotFound();
+
+        // Ajustar inventario antes de eliminar
+        var inventario = await _context.Inventario
+            .FirstOrDefaultAsync(i => i.IdProducto == detalle.IdProducto);
+        if (inventario != null)
         {
-            var detalle = await _context.DetallePerdida.FindAsync(id);
-            if (detalle == null) return NotFound();
+            inventario.CantidadDisponible += detalle.CantidadPerdida;
+            _context.Inventario.Update(inventario);
+        }
 
-            var inventario = await _context.Inventario.FirstOrDefaultAsync(i => i.IdProducto == vm.IdProducto);
-            if (inventario == null || inventario.CantidadDisponible + detalle.CantidadPerdida < vm.CantidadPerdida)
-            {
-                ModelState.AddModelError("", "No hay inventario suficiente para actualizar la pérdida.");
-                await PopulateProductos(vm.IdProducto);
-                return PartialView("Edit", vm);
-            }
+        var producto = await _context.Producto.FindAsync(detalle.IdProducto);
+        if (producto != null)
+        {
+            producto.Cantidad += detalle.CantidadPerdida;
+            _context.Producto.Update(producto);
+        }
 
-            int delta = vm.CantidadPerdida - detalle.CantidadPerdida;
-            detalle.IdProducto = vm.IdProducto;
-            detalle.CantidadPerdida = vm.CantidadPerdida;
-            detalle.PrecioCompraUnitario = inventario.PrecioCompra;
-            detalle.SubtotalPerdida = vm.CantidadPerdida * inventario.PrecioCompra;
+        _context.DetallePerdida.Remove(detalle);
+        await _context.SaveChangesAsync();
 
-            await AjustarInventario(vm.IdProducto, delta);
-
-            _context.DetallePerdida.Update(detalle);
-
-            var perdida = await _context.Perdida.FindAsync(idPerdida);
-            if (perdida != null)
-            {
-                perdida.Total = await _context.DetallePerdida
-                    .Where(d => d.IdPerdida == idPerdida)
-                    .SumAsync(d => d.SubtotalPerdida);
-                _context.Perdida.Update(perdida);
-            }
-
+        // Actualizar total de la pérdida
+        var perdida = await _context.Perdida.FindAsync(detalle.IdPerdida);
+        if (perdida != null)
+        {
+            perdida.Total = await _context.DetallePerdida
+                .Where(d => d.IdPerdida == detalle.IdPerdida)
+                .SumAsync(d => d.SubtotalPerdida);
+            _context.Perdida.Update(perdida);
             await _context.SaveChangesAsync();
-
-            Response.Headers["HX-Trigger"] = "refreshDetallePerdidaList, htmx:closeModal";
-            return Content("");
         }
 
-        // ===============================
-        // Delete
-        // ===============================
-        public async Task<IActionResult> Delete(int id)
-        {
-            var detalle = await _context.DetallePerdida
-                .Include(d => d.IdProductoNavigation)
-                .FirstOrDefaultAsync(d => d.IdDetallePerdida == id);
-            if (detalle == null) return NotFound();
-
-            ViewBag.IdPerdida = detalle.IdPerdida;
-            return PartialView("Delete", detalle);
-        }
-
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var detalle = await _context.DetallePerdida.FindAsync(id);
-            if (detalle == null) return NotFound();
-
-            int idProducto = detalle.IdProducto;
-            int idPerdida = detalle.IdPerdida;
-
-            _context.DetallePerdida.Remove(detalle);
-            await _context.SaveChangesAsync();
-
-            await AjustarInventario(idProducto, -detalle.CantidadPerdida);
-
-            var perdida = await _context.Perdida.FindAsync(idPerdida);
-            if (perdida != null)
-            {
-                perdida.Total = await _context.DetallePerdida
-                    .Where(d => d.IdPerdida == idPerdida)
-                    .SumAsync(d => d.SubtotalPerdida);
-                _context.Perdida.Update(perdida);
-                await _context.SaveChangesAsync();
-            }
-
-            Response.Headers["HX-Trigger"] = "refreshDetallePerdidaList, htmx:closeModal";
-            return Content("");
-        }
+        Response.Headers["HX-Trigger"] = "refreshDetallePerdidaList, htmx:closeModal";
+        return Content("");
+    }
     }
 }

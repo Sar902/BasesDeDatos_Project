@@ -6,15 +6,19 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 
-<form asp-action="DeleteConfirmed"
+<form method="post"
       hx-post="@Url.Action("DeleteConfirmed", new { id = Model.IdPerdida })"
       hx-target="#perdida-@Model.IdPerdida"
-      hx-swap="outerHTML">
+      hx-swap="outerHTML"
+      hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-generic')).hide()">
 
     @Html.AntiForgeryToken()
 
     <div class="modal-body">
-        <p>¿Está seguro de que desea eliminar la pérdida del <strong>@Model.Fecha.ToShortDateString()</strong> con motivo "<strong>@Model.Motivo</strong>"?</p>
+        <p>¿Está seguro de que desea eliminar la pérdida del 
+            <strong>@Model.Fecha.ToShortDateString()</strong> 
+            con motivo "<strong>@Model.Motivo</strong>"?
+        </p>
     </div>
 
     <div class="modal-footer">

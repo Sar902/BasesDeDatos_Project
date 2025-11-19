@@ -5,6 +5,8 @@ namespace ProyectoSistemaInventarioNuevo.ViewModels;
 
 public class PerdidaCreateViewModel
 {
+
+    
     public int IdPerdida { get; set; }
     public DateTime Fecha { get; set; } = DateTime.Now;
 

@@ -25,10 +25,10 @@
             @foreach (var item in Model.Items)
             {
                 <tr>
-                    <td>@Html.DisplayFor(m => item.IdProducto)</td>
-                    <td>@Html.DisplayFor(m => item.CantidadPerdida)</td>
-                    <td>@Html.DisplayFor(m => item.PrecioCompraUnitario)</td>
-                    <td>@Html.DisplayFor(m => item.SubtotalPerdida)</td>
+                    <td>@item.NombreProducto</td>
+                    <td>@item.CantidadPerdida</td>
+                    <td>@item.PrecioCompraUnitario.ToString("C")</td>
+                    <td>@item.SubtotalPerdida.ToString("C")</td>
                 </tr>
             }
         </tbody>

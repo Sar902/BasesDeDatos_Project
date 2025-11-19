@@ -1,8 +1,6 @@
-@model IEnumerable<ProyectoSistemaInventarioNuevo.Models.Perdidum>
-
 @foreach (var p in Model)
 {
-    <tr>
+    <tr id="perdida-@p.IdPerdida">
         <td>@p.Fecha.ToShortDateString()</td>
         <td>@p.Total.ToString("C")</td>
         <td>@p.Motivo</td>
@@ -14,6 +12,15 @@
                     data-bs-target="#genericModal">
                 Editar
             </button>
+
+            <button class="btn btn-sm btn-secondary"
+                    hx-get="@Url.Action("Details", new { id = p.IdPerdida })"
+                    hx-target="#modal-content-generic"
+                    data-bs-toggle="modal"
+                    data-bs-target="#genericModal">
+                Detalles
+            </button>
+
             <button class="btn btn-sm btn-danger"
                     hx-get="@Url.Action("Delete", new { id = p.IdPerdida })"
                     hx-target="#modal-content-generic"

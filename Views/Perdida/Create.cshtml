@@ -1,42 +1,65 @@
-@model ProyectoSistemaInventarioNuevo.Models.Perdidum
+@model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaCreateViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    Layout = null; // Porque es modal
 }
 
-<h1>Create</h1>
-
-<h4>Perdidum</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Fecha" class="control-label"></label>
-                <input asp-for="Fecha" class="form-control" />
-                <span asp-validation-for="Fecha" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Total" class="control-label"></label>
-                <input asp-for="Total" class="form-control" />
-                <span asp-validation-for="Total" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Motivo" class="control-label"></label>
-                <input asp-for="Motivo" class="form-control" />
-                <span asp-validation-for="Motivo" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+<div class="modal-header">
+    <h5 class="modal-title">Crear Nueva Pérdida</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+<div class="modal-body">
+    <form hx-post="@Url.Action("Create")"
+          hx-target="#modal-content-generic"
+          hx-swap="innerHTML">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Fecha" class="form-label"></label>
+            <input asp-for="Fecha" class="form-control" type="date" />
+            <span asp-validation-for="Fecha" class="text-danger"></span>
+        </div>
+
+    
+        <div class="mb-3">
+            <label asp-for="Motivo" class="form-label"></label>
+            <input asp-for="Motivo" class="form-control" />
+            <span asp-validation-for="Motivo" class="text-danger"></span>
+        </div>
+
+        <hr />
+        <h6>Detalles</h6>
+        <div id="items-container">
+            @for (int i = 0; i < Model.Items.Count; i++)
+            {
+                <div class="mb-2">
+                    <label>Producto</label>
+                    <select asp-for="Items[@i].IdProducto" class="form-select">
+                        <option value="">-- Seleccione --</option>
+                        @* Aquí puedes agregar todos los productos *@
+                      @foreach(var prod in ViewBag.Productos as List<SelectListItem>)
+                      {
+                       <option value="@prod.Value">@prod.Text</option>
+                      }
+
+                    </select>
+                    <span asp-validation-for="Items[@i].IdProducto" class="text-danger"></span>
+
+                    <label>Cantidad</label>
+                    <input asp-for="Items[@i].CantidadPerdida" class="form-control" type="number" min="1" />
+                    <span asp-validation-for="Items[@i].CantidadPerdida" class="text-danger"></span>
+                </div>
+            }
+        </div>
+
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+    </form>
 </div>
 
 @section Scripts {

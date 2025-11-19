@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 
 namespace ProyectoSistemaInventarioNuevo.Models;
 
@@ -21,7 +23,10 @@ public partial class DetallePerdidum
     public decimal PrecioCompraUnitario { get; set; }
 
    [Display(Name = "Subtotal Pérdida")]
-   public decimal SubtotalPerdida { get; set; } 
+
+   [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    public decimal SubtotalPerdida { get; private set; }
+
 
     public virtual Perdidum IdPerdidaNavigation { get; set; } = null!;
 

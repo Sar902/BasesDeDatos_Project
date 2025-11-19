@@ -16,6 +16,7 @@ public class PerdidaDetalleViewModel
     public int CantidadPerdida { get; set; }
 
     public decimal PrecioCompraUnitario { get; set; } 
-        public decimal SubtotalPerdida { get; set; }    
+    public decimal SubtotalPerdida { get; set; }    
+    public int IdDetallePerdida { get; set; } 
 }
 
