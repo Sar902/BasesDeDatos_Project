@@ -1,3 +1,7 @@
+
+using System.ComponentModel.DataAnnotations;
+
+
 namespace ProyectoSistemaInventarioNuevo.ViewModels
 {
     // Esta clase guardará 1 línea del detalle

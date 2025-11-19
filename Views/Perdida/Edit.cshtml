@@ -1,95 +1,43 @@
-@model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaCreateViewModel
+@model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaEditViewModel
+@{ Layout = null; }
 
-<h2>Editar Pérdida</h2>
+<div class="modal-header">
+    <h5 class="modal-title">Editar Pérdida</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
 
-<form asp-action="Edit" method="post">
+<form method="post"
+      hx-post="@Url.Action("Edit", new { id = Model.IdPerdida })"
+      hx-target="#perdida-@Model.IdPerdida"
+      hx-swap="outerHTML">
+
     @Html.AntiForgeryToken()
-
     <input type="hidden" asp-for="IdPerdida" />
 
-    <div class="mb-3">
-        <label asp-for="Fecha" class="form-label"></label>
-        <input asp-for="Fecha" class="form-control" type="date" />
-        <span asp-validation-for="Fecha" class="text-danger"></span>
+    <div class="modal-body">
+
+        <!-- Fecha -->
+        <div class="mb-3">
+            <label asp-for="Fecha" class="form-label"></label>
+            <input asp-for="Fecha" type="date" class="form-control" />
+            <span asp-validation-for="Fecha" class="text-danger"></span>
+        </div>
+
+        <!-- Motivo -->
+        <div class="mb-3">
+            <label asp-for="Motivo" class="form-label"></label>
+            <input asp-for="Motivo" class="form-control" />
+            <span asp-validation-for="Motivo" class="text-danger"></span>
+        </div>
+
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Motivo" class="form-label"></label>
-        <input asp-for="Motivo" class="form-control" />
-        <span asp-validation-for="Motivo" class="text-danger"></span>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
     </div>
-
-    <h4>Detalles</h4>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad Perdida</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody id="detalle-perdida-list">
-            @for (int i = 0; i < Model.Items.Count; i++)
-            {
-                <tr>
-                    <td>
-                        <select asp-for="Items[@i].IdProducto" class="form-select" asp-items="@(new SelectList(ViewBag.Productos, "Value", "Text"))"></select>
-                        <span asp-validation-for="Items[@i].IdProducto" class="text-danger"></span>
-                    </td>
-                    <td>
-                        <input asp-for="Items[@i].CantidadPerdida" class="form-control" type="number" min="1" />
-                        <span asp-validation-for="Items[@i].CantidadPerdida" class="text-danger"></span>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm removeItem">Eliminar</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <button type="button" class="btn btn-secondary" id="addItem">Agregar producto</button>
-    <button type="submit" class="btn btn-primary">Guardar cambios</button>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        let index = @Model.Items.Count;
-        const productos = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.Productos));
-
-        // Agregar nuevo producto
-        document.getElementById("addItem").addEventListener("click", function() {
-            let table = document.getElementById("detalle-perdida-list");
-            let row = document.createElement("tr");
-
-            let options = productos.map(p => `<option value="${p.Value}">${p.Text}</option>`).join('');
-
-            row.innerHTML = `
-                <td>
-                    <select name="Items[${index}].IdProducto" class="form-select">
-                        ${options}
-                    </select>
-                </td>
-                <td>
-                    <input type="number" name="Items[${index}].CantidadPerdida" class="form-control" min="1" />
-                </td>
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm removeItem">Eliminar</button>
-                </td>
-            `;
-
-            table.appendChild(row);
-            index++;
-
-            $.validator.unobtrusive.parse(table);
-        });
-
-        // Eliminar fila de producto
-        document.getElementById("detalle-perdida-list").addEventListener("click", function(e) {
-            if (e.target && e.target.classList.contains("removeItem")) {
-                e.target.closest("tr").remove();
-            }
-        });
-    </script>
 }

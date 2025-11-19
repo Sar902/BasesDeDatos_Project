@@ -196,68 +196,41 @@ public async Task<IActionResult> Details(int? id)
 }
 
 // GET Edit
+// GET: Perdida/Edit/5
 public async Task<IActionResult> Edit(int id)
 {
     var perdida = await _context.Perdida
-        .Include(p => p.DetallePerdida)
-        .ThenInclude(d => d.IdProductoNavigation)
         .FirstOrDefaultAsync(p => p.IdPerdida == id);
 
     if (perdida == null) return NotFound();
 
-    var vm = new PerdidaCreateViewModel
+    var vm = new PerdidaEditViewModel
     {
         IdPerdida = perdida.IdPerdida,
         Fecha = perdida.Fecha,
-        Motivo = perdida.Motivo,
-      Items = perdida.DetallePerdida.Select(d => new PerdidaDetalleViewModel
-     {
-    IdProducto = d.IdProducto,
-    NombreProducto = d.IdProductoNavigation.Nombre,  // <--- llenar el nombre
-    CantidadPerdida = d.CantidadPerdida,
-    PrecioCompraUnitario = d.PrecioCompraUnitario,
-    SubtotalPerdida = d.SubtotalPerdida
-   }).ToList()
-
+        Motivo = perdida.Motivo
     };
-
-    ViewBag.Productos = _context.Producto
-        .Select(p => new { p.IdProducto, p.Nombre })
-        .ToList()
-        .Select(p => new SelectListItem { Value = p.IdProducto.ToString(), Text = p.Nombre })
-        .ToList();
 
     return PartialView("Edit", vm);
 }
 
-// POST Edit
+// POST: Perdida/Edit/5
 [HttpPost]
 [ValidateAntiForgeryToken]
-public async Task<IActionResult> Edit(int id, PerdidaCreateViewModel model)
+public async Task<IActionResult> Edit(int id, PerdidaEditViewModel model)
 {
     if (id != model.IdPerdida) return BadRequest();
 
     var perdida = await _context.Perdida
-        .Include(p => p.DetallePerdida)
         .FirstOrDefaultAsync(p => p.IdPerdida == id);
+
     if (perdida == null) return NotFound();
 
     perdida.Fecha = model.Fecha;
     perdida.Motivo = model.Motivo;
 
-    // Iterar detalles y actualizar cada uno
-    foreach (var item in model.Items)
-    {
-        var detalle = await _context.DetallePerdida
-            .FirstOrDefaultAsync(d => d.IdDetallePerdida == item.IdDetallePerdida);
-        if (detalle != null)
-        {
-            // Lógica de stock ya está en DetallePerdidaController.Edit,
-            // aquí solo podrías llamar a ese método o actualizar directamente si quieres.
-        }
-    }
-
     await _context.SaveChangesAsync();
+
     Response.Headers["HX-Trigger"] = "refreshPerdidaList, htmx:closeModal";
     return Content("");
 }
