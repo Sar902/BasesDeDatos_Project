@@ -1,10 +1,8 @@
 @model IEnumerable<ProyectoSistemaInventarioNuevo.Models.VSoltum>
 
-
-
 @foreach (var item in Model) {
     <tr>
-        <td>@Html.DisplayFor(modelItem => item.IdSolicitudDevolucion)</td>
+        <td class="oculto">@Html.DisplayFor(modelItem => item.IdSolicitudDevolucion)</td>
         <td>@Html.DisplayFor(modelItem => item.Proveedor)</td>
         <td>@Html.DisplayFor(modelItem => item.Observaciones)</td>
         <td>@Html.DisplayFor(modelItem => item.Fecha)</td>

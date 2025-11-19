@@ -1,5 +1,15 @@
 @model IEnumerable<ProyectoSistemaInventarioNuevo.Models.SolicitudDevolucion>
 
+<style>
+    .oculto {
+        display: none;
+    }
+    td.oculto {
+        display: none;
+    }
+</style>
+
+
 @{
     ViewData["Title"] = "Solicitudes de devolucion";
 }
@@ -16,7 +26,7 @@
 <table class="table">
     <thead>
         <tr>
-            <th>Nº De Solicitud de devolucion</th>
+            <th class="oculto">Nº De Solicitud de devolucion</th>
             <th>Proveedor</th>
             <th>Observaciones</th>
             <th>Fecha</th>
