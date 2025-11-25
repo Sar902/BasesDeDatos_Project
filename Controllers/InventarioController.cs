@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using ProyectoSistemaInventarioNuevo.ViewModels;
 using ProyectoSistemaInventarioNuevo.Models;
 
 namespace ProyectoSistemaInventarioNuevo.Controllers
@@ -85,9 +86,38 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // =====================================================================
 
         // Página principal: solo carga la carcasa del frontend.
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            // 1. Traemos TODOS los datos crudos (incluyendo nombres de productos y proveedores)
+            var inventarioCrudo = await _context.Inventario
+                .Include(i => i.IdProductoNavigation)
+                .Include(i => i.IdProveedorNavigation)
+                .AsNoTracking()
+                .OrderByDescending(i => i.FechaEntrada)
+                .ToListAsync();
+
+            // 2. HACEMOS LA MAGIA: Agrupar en memoria
+            // La lógica es: Si tienen la misma Fecha y el mismo Proveedor, pertenecen a la misma "Compra"
+            var comprasVirtuales = inventarioCrudo
+                .GroupBy(x => new { x.FechaEntrada.Date, x.IdProveedor }) 
+                .Select(grupo => new CompraAgrupadaViewModel
+                {
+                    Fecha = grupo.Key.Date,
+                    // Si el proveedor es null, ponemos "Sin Proveedor"
+                    NombreProveedor = grupo.First().IdProveedorNavigation?.Nombre ?? "Proveedor Desconocido",
+                    
+                    // Calculamos el total sumando (Cantidad * PrecioCompra) de cada item
+                    TotalCompra = grupo.Sum(item => item.Cantidad * item.PrecioCompra),
+                    
+                    CantidadLotes = grupo.Count(),
+                    
+                    // Guardamos la lista de items por si queremos ver el detalle
+                    Lotes = grupo.ToList()
+                })
+                .OrderByDescending(x => x.Fecha) // Las más recientes primero
+                .ToList();
+
+            return View(comprasVirtuales);
         }
 
         // Endpoint que HTMX usa para cargar la tabla del inventario.
@@ -128,78 +158,96 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // =====================================================================
         // CREATE
         // =====================================================================
-
+        // GET: Inventario/Create
         public async Task<IActionResult> Create()
         {
-            await PopulateDropdowns(); // Cargar selects
+            var viewModel = new CompraViewModel();
 
-            if (IsHtmxRequest())
-            {
-                return PartialView("Create", new Inventario { FechaEntrada = DateTime.Today });
-            }
+            ViewData["Productos"] = new SelectList(await _context.VProducto.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(), "IdProducto", "Nombre");
+            ViewData["Proveedores"] = new SelectList(await _context.Proveedor.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(), "IdProveedor", "Nombre");
 
-            return View();
+            // CAMBIO: Ya no devolvemos PartialView, siempre devolvemos View completa (con Layout)
+            return View(viewModel);
         }
 
+        // POST: Inventario/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdProducto,IdProveedor,Cantidad,PrecioCompra,FechaEntrada")] Inventario inventario)
+        public async Task<IActionResult> Create(CompraViewModel viewModel)
         {
+            if (viewModel.Items == null || !viewModel.Items.Any())
+            {
+                ModelState.AddModelError("", "No se puede registrar una compra sin productos.");
+            }
+
             if (ModelState.IsValid)
             {
-                // Transacción para evitar inconsistencias
                 using (var transaction = _context.Database.BeginTransaction())
                 {
                     try
                     {
-                        // 1. Definir datos del nuevo lote
-                        inventario.CantidadDisponible = inventario.Cantidad;
-                        inventario.Estado = "EnExistencia";
-                        inventario.FechaSalida = null;
+                        foreach (var item in viewModel.Items)
+                        {
+                            var nuevoLote = new Inventario
+                            {
+                                IdProducto = item.IdProducto,
+                                IdProveedor = item.IdProveedor,
+                                Cantidad = item.Cantidad,
+                                CantidadDisponible = item.Cantidad,
+                                PrecioCompra = item.PrecioCompra,
+                                FechaEntrada = viewModel.Fecha,
+                                Estado = "EnExistencia"
+                            };
 
-                        _context.Add(inventario);
-                        await _context.SaveChangesAsync(); // Guardamos el lote
-
-                        // 2. Actualizar stock maestro del producto
-                        await RecalculateMasterStock(inventario.IdProducto);
+                            _context.Add(nuevoLote);
+                            await _context.SaveChangesAsync();
+                            await RecalculateMasterStock(item.IdProducto);
+                        }
 
                         await transaction.CommitAsync();
 
-                        // Cierra modal y recarga la tabla
-                        Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshInventarioList");
-                        return Content("", "text/html");
+                        // CAMBIO: Redirección estándar a Index en lugar de cerrar modal
+                        return RedirectToAction(nameof(Index));
                     }
                     catch (Exception ex)
                     {
                         await transaction.RollbackAsync();
-                        ModelState.AddModelError("", $"Error al guardar: {ex.Message}");
+                        ModelState.AddModelError("", $"Error: {ex.Message}");
                     }
                 }
             }
 
-            // Si hay errores, recargar dropdowns y devolver formulario
-            await PopulateDropdowns(inventario);
-            return PartialView("Create", inventario);
+            // Si falla, recargamos los selects
+            ViewData["Productos"] = new SelectList(await _context.VProducto.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(), "IdProducto", "Nombre");
+            ViewData["Proveedores"] = new SelectList(await _context.Proveedor.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(), "IdProveedor", "Nombre");
+
+            return View(viewModel);
         }
 
         // =====================================================================
         // EDIT
         // =====================================================================
 
+       // GET: Inventario/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
-            var inventario = await _context.Inventario.FindAsync(id);
+            // Incluimos la navegación al Producto para obtener su nombre
+            var inventario = await _context.Inventario
+                .Include(i => i.IdProductoNavigation)
+                .FirstOrDefaultAsync(i => i.IdInventario == id);
+
             if (inventario == null) return NotFound();
+
+            // Pasamos el nombre a la vista para mostrarlo en el campo de solo lectura
+            ViewBag.NombreProducto = inventario.IdProductoNavigation?.Nombre;
 
             await PopulateDropdowns(inventario);
 
-            return IsHtmxRequest()
-                ? PartialView("Edit", inventario)
-                : View(inventario);
+            // Ahora siempre devolvemos la Vista normal (sin modal)
+            return View(inventario);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("IdInventario,IdProducto,IdProveedor,Cantidad,CantidadDisponible,PrecioCompra,FechaEntrada,FechaSalida,Estado")] Inventario inventario)
@@ -265,6 +313,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // DELETE
         // =====================================================================
 
+        // GET: Inventario/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -273,15 +322,15 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                 .Include(i => i.IdProductoNavigation)
                 .Include(i => i.IdProveedorNavigation)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.IdInventario == id);
+                .FirstOrDefaultAsync(m => m.IdInventario == id);
 
             if (inventario == null) return NotFound();
 
-            return IsHtmxRequest()
-                ? PartialView("Delete", inventario)
-                : View(inventario);
+            // Devolvemos la vista completa estándar
+            return View(inventario);
         }
 
+        // POST: Inventario/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -289,16 +338,16 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             var inventario = await _context.Inventario.FindAsync(id);
             if (inventario == null) return NotFound();
 
-            // Validación: no borrar si tiene solicitudes de devolución
-            bool tieneSolicitudes = await _context.SolicitudDevolucion
-                .AnyAsync(s => s.IdInventario == id);
-
+            // Validar si tiene devoluciones asociadas antes de borrar
+            bool tieneSolicitudes = await _context.SolicitudDevolucion.AnyAsync(s => s.IdInventario == id);
             if (tieneSolicitudes)
             {
-                ModelState.AddModelError("", "No se puede borrar. Este lote tiene solicitudes de devolución asociadas.");
+                ModelState.AddModelError("", "No se puede borrar: Este lote tiene devoluciones asociadas.");
+                
+                // Recargar relaciones para mostrar la vista de error correctamente
                 await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
                 await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
-                return PartialView("Delete", inventario);
+                return View("Delete", inventario);
             }
 
             using (var transaction = _context.Database.BeginTransaction())
@@ -308,30 +357,25 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
                     int idProductoAfectado = inventario.IdProducto;
 
                     _context.Inventario.Remove(inventario);
-                    await _context.SaveChangesAsync();  // El lote ya fue eliminado
+                    await _context.SaveChangesAsync();
 
-                    // Ahora recalculamos el stock maestro
+                    // IMPORTANTE: Recalcular el stock maestro del producto al borrar
                     await RecalculateMasterStock(idProductoAfectado);
 
                     await transaction.CommitAsync();
-
-                    if (IsHtmxRequest())
-                    {
-                        Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshInventarioList");
-                        return Content("", "text/html");
-                    }
-
+                    
+                    // Redirigir al índice general
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
                     ModelState.AddModelError("", "Error al borrar: " + ex.Message);
-
+                    
+                    // Recargar relaciones para la vista de error
                     await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
                     await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
-
-                    return PartialView("Delete", inventario);
+                    return View("Delete", inventario);
                 }
             }
         }

@@ -1,39 +1,59 @@
 @model ProyectoSistemaInventarioNuevo.Models.Inventario
-@{ Layout = null; } 
 
-<div class="modal-header">
-    <h5 class="modal-title">Confirmar Eliminación</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
+@{
+    ViewData["Title"] = "Eliminar Lote";
+    // Al quitar Layout = null, se carga el diseño general
+}
 
-<form asp-action="Delete"
-      hx-post="@Url.Action("Delete", new { id = Model.IdInventario })"
-      hx-target="this" 
-      hx-swap="outerHTML">
-    
-    @Html.AntiForgeryToken()
-    
-    <div class="modal-body">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        <input type="hidden" asp-for="IdInventario" />
-        
-        <p>¿Está seguro de que desea eliminar este lote?</p>
-        
-        <div class="alert alert-warning">
-            <strong>Producto:</strong> @Model.IdProductoNavigation.Nombre <br/>
-            <strong>Proveedor:</strong> @Model.IdProveedorNavigation.Nombre <br/>
-            <strong>Fecha:</strong> @Model.FechaEntrada.ToShortDateString() <br/>
-            <strong>Cantidad Total Lote:</strong> @Model.Cantidad <br/>
-            <strong class="text-danger">Cantidad Disponible:</strong> @Model.CantidadDisponible
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Confirmar Eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">¿Está seguro de que desea eliminar este lote de inventario?</h5>
+
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-info-circle"></i> 
+                        Esta acción es irreversible y <strong>restará el stock disponible</strong> de este lote del inventario general.
+                    </div>
+
+                    <dl class="row mt-4">
+                        <dt class="col-sm-4 text-end">Producto:</dt>
+                        <dd class="col-sm-8 fw-bold">@Model.IdProductoNavigation?.Nombre</dd>
+
+                        <dt class="col-sm-4 text-end">Proveedor:</dt>
+                        <dd class="col-sm-8">@Model.IdProveedorNavigation?.Nombre</dd>
+
+                        <dt class="col-sm-4 text-end">Fecha de Entrada:</dt>
+                        <dd class="col-sm-8">@Model.FechaEntrada.ToShortDateString()</dd>
+
+                        <dt class="col-sm-4 text-end">Costo Unitario:</dt>
+                        <dd class="col-sm-8">C$ @Model.PrecioCompra.ToString("N2")</dd>
+
+                        <dt class="col-sm-4 text-end">Cantidad Original:</dt>
+                        <dd class="col-sm-8">@Model.Cantidad</dd>
+
+                        <dt class="col-sm-4 text-end text-danger">Cantidad a Restar:</dt>
+                        <dd class="col-sm-8 text-danger fw-bold">@Model.CantidadDisponible (Disponible actualmente)</dd>
+                    </dl>
+
+                    <hr />
+
+                    <form asp-action="Delete" class="text-center">
+                        <input type="hidden" asp-for="IdInventario" />
+                        
+                        <a asp-action="Index" class="btn btn-secondary me-2">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Confirmar y Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-        
-        <p class="text-danger fw-bold">
-            ADVERTENCIA: Esta acción eliminará el lote y recalculará el stock maestro del producto.
-            (Efectivamente, se restará @Model.CantidadDisponible del stock total).
-        </p>
     </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-danger">Eliminar Lote</button>
-    </div>
-</form>
+</div>

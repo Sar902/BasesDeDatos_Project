@@ -1,36 +1,94 @@
+@model IEnumerable<ProyectoSistemaInventarioNuevo.ViewModels.CompraAgrupadaViewModel>
+
 @{
-    ViewData["Title"] = "Lotes de Inventario";
+    ViewData["Title"] = "Historial de Compras (Agrupado)";
 }
 
-<h1>Lotes de Inventario</h1>
+<h1>Historial de Compras</h1>
 
 <p>
-    <button class="btn btn-primary"
-            hx-get="@Url.Action("Create")"
-            hx-target="#modal-content-generic"
-            hx-swap="innerHTML">
-        <i class="bi bi-plus-circle"></i> Registrar Lote (Compra)
-    </button>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Compra
+    </a>
 </p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Producto</th>
-            <th>Proveedor</th>
-            <th>Cant. Total</th>
-            <th>Cant. Disponible</th>
-            <th>Precio Compra</th>
-            <th>Fecha Entrada</th>
-            <th>Estado</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody id="inventario-tbody"
-           hx-get="@Url.Action("GetInventarioList")"
-           hx-trigger="load, refreshInventarioList from:body"
-           hx-swap="innerHTML">
-           
-           <tr><td colspan="8">Cargando inventario...</td></tr>
-    </tbody>
-</table>
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Los registros se han agrupado automáticamente por <strong>Fecha</strong> y <strong>Proveedor</strong>.
+</div>
+
+<div class="accordion" id="accordionCompras">
+    @foreach (var compra in Model.Select((value, index) => new { value, index }))
+    {
+        // Generamos IDs únicos para el acordeón
+        var collapseId = "collapse" + compra.index;
+        var headerId = "heading" + compra.index;
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="@headerId">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                    <div class="d-flex w-100 justify-content-between me-3 align-items-center">
+                        
+                        <div>
+                            <strong>@compra.value.Fecha.ToShortDateString()</strong> 
+                            <span class="mx-2 text-muted">|</span> 
+                            <span class="text-primary">@compra.value.NombreProveedor</span>
+                        </div>
+
+                        <div class="text-end">
+                            <span class="badge bg-secondary me-2">@compra.value.CantidadLotes items</span>
+                            <span class="fw-bold text-success fs-6">
+                            Total: <span class="text-dark">C$</span> @compra.value.TotalCompra.ToString("N2")                    </div>
+                </button>
+            </h2>
+            
+            <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="@headerId" data-bs-parent="#accordionCompras">
+                <div class="accordion-body p-0">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Producto</th>
+                                <th>Cant. Comprada</th>
+                                <th>Cant. Disponible</th>
+                                <th>Costo Unit.</th>
+                                <th>Subtotal</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in compra.value.Lotes)
+                            {
+                                // Calculamos subtotal por item
+                                var subtotal = item.Cantidad * item.PrecioCompra;
+                                <tr>
+                                    <td class="ps-4">@item.IdProductoNavigation?.Nombre</td>
+                                    <td>@item.Cantidad</td>
+                                    <td>
+                                        @if(item.CantidadDisponible == 0) { <span class="text-danger fw-bold">0</span> }
+                                        else { @item.CantidadDisponible }
+                                    </td>
+                                    <td>C$ @item.PrecioCompra.ToString("N2")</td>
+                                    <td>C$ @subtotal.ToString("N2")</td>
+                                    <td>
+                                        @if (item.Estado == "Agotado")
+                                        {
+                                            <span class="badge bg-danger">Agotado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">En Existencia</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="Edit" asp-route-id="@item.IdInventario" class="text-primary" title="Editar Lote"><i class="bi bi-pencil-square"></i></a>
+                                        <a asp-action="Delete" asp-route-id="@item.IdInventario" class="text-danger ms-2" title="Borrar Lote"><i class="bi bi-trash"></i></a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,76 +1,113 @@
 @model ProyectoSistemaInventarioNuevo.Models.Inventario
-@{ Layout = null; }
-
-<form asp-action="Edit"
-      hx-post="@Url.Action("Edit", new { id = Model.IdInventario })"
-      hx-target="this"
-      hx-swap="outerHTML">
-      
-    @Html.AntiForgeryToken()
-      
-    <div class="modal-header">
-        <h5 class="modal-title">Editar Lote</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
-
-    <div class="modal-body">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        <input type="hidden" asp-for="IdInventario" />
-        
-        <div class="form-group">
-            <label asp-for="IdProducto" class="control-label">Producto</label>
-            <select asp-for="IdProducto" class ="form-control" asp-items="ViewBag.IdProducto"></select>
-            <span asp-validation-for="IdProducto" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="IdProveedor" class="control-label">Proveedor</label>
-            <select asp-for="IdProveedor" class ="form-control" asp-items="ViewBag.IdProveedor" disabled></select>
-            <input type="hidden" asp-for="IdProveedor" />
-        </div>
-
-        <div class="form-group">
-            <label asp-for="Cantidad" class="control-label">Cantidad Total del Lote</label>
-            <input asp-for="Cantidad" class="form-control" type="number" readonly />
-        </div>
-
-        <div class="form-group">
-            <label asp-for="CantidadDisponible" class="control-label">Cantidad Disponible</label>
-            <input asp-for="CantidadDisponible" class="form-control" type="number" readonly />
-        </div>
-
-        <div class="form-group">
-            <label asp-for="PrecioCompra" class="control-label">Precio Compra</label>
-            <input asp-for="PrecioCompra" class="form-control" 
-                   readonly="@(Model.CantidadDisponible > 0 ? "readonly" : null)" />
-            <span asp-validation-for="PrecioCompra" class="text-danger"></span>
-            @if(Model.CantidadDisponible > 0) {
-                <small class="text-muted">Solo editable cuando el lote esté agotado.</small>
-            }
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="FechaEntrada" class="control-label"></label>
-            <input asp-for="FechaEntrada" class="form-control" type="date" readonly />
-        </div>
-
-        <div class="form-group">
-            <label asp-for="FechaSalida" class="control-label"></label>
-            <input asp-for="FechaSalida" class="form-control" type="date" readonly />
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="Estado" class="control-label"></label>
-            <input asp-for="Estado" class="form-control" readonly />
-        </div>
-    </div>
-
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-    </div>
-</form>
 
 @{
-    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    ViewData["Title"] = "Editar Lote de Inventario";
+    // IMPORTANTE: Al no poner Layout = null, cargará automáticamente el menú lateral
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Historial
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Modificar Datos del Lote</h6>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="text-danger alert alert-danger" role="alert"></div>
+                
+                <input type="hidden" asp-for="IdInventario" />
+                <input type="hidden" asp-for="IdProducto" /> <input type="hidden" asp-for="FechaSalida" />
+                <input type="hidden" asp-for="Estado" />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="control-label fw-bold">Producto</label>
+                            <input type="text" class="form-control bg-light" value="@ViewBag.NombreProducto" readonly />
+                            <small class="text-muted">Para cambiar el producto, es mejor borrar este lote y crear uno nuevo.</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="IdProveedor" class="control-label fw-bold">Proveedor</label>
+                            <select asp-for="IdProveedor" class="form-control" asp-items="ViewBag.IdProveedor"></select>
+                            <span asp-validation-for="IdProveedor" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="FechaEntrada" class="control-label fw-bold">Fecha de Compra</label>
+                            <input asp-for="FechaEntrada" class="form-control" type="date" />
+                            <span asp-validation-for="FechaEntrada" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Cantidad" class="control-label fw-bold text-primary">Cantidad Original (Comprada)</label>
+                                    <input asp-for="Cantidad" class="form-control" type="number" />
+                                    <span asp-validation-for="Cantidad" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="CantidadDisponible" class="control-label fw-bold text-success">Cantidad Disponible (Stock)</label>
+                                    <input asp-for="CantidadDisponible" class="form-control" type="number" />
+                                    <span asp-validation-for="CantidadDisponible" class="text-danger"></span>
+                                    <small class="text-muted">No puede ser mayor a la cantidad original.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="PrecioCompra" class="control-label fw-bold">Costo Unitario (C$)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">C$</span>
+                                
+                                <input asp-for="PrecioCompra" 
+                                    class="form-control" 
+                                    type="number" 
+                                    step="0.01" 
+                                    value="@Model.PrecioCompra.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                            </div>
+                            <span asp-validation-for="PrecioCompra" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+                
+                <div class="form-group text-end">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Script simple para validar integridad básica en el cliente
+        $(document).ready(function() {
+            $('form').submit(function(e) {
+                var total = parseInt($('#Cantidad').val());
+                var disponible = parseInt($('#CantidadDisponible').val());
+                
+                if (disponible > total) {
+                    alert('Error: La cantidad disponible (' + disponible + ') no puede ser mayor a la cantidad original comprada (' + total + ').');
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
 }
