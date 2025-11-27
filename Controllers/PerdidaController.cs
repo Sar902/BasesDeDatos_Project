@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ProyectoSistemaInventarioNuevo.Models;
 using ProyectoSistemaInventarioNuevo.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using ProyectoSistemaInventarioNuevo.ViewModels;
-
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace ProyectoSistemaInventarioNuevo.Controllers
 {
@@ -21,6 +20,7 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             _context = context;
         }
 
+        // Método auxiliar para detectar peticiones HTMX
         private bool IsHtmxRequest() => Request.Headers.ContainsKey("HX-Request");
 
         // GET: Perdida
@@ -30,170 +30,254 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         }
 
         // GET: HTMX lista de pérdidas
-        public async Task<IActionResult> GetPerdidaList()
-        {
-            var perdidas = await _context.Perdida.ToListAsync();
-            return PartialView("_PerdidaList", perdidas);
-        }
+       public async Task<IActionResult> GetPerdidaList()
+{
+    // Trae las pérdidas con detalle si quieres, o solo la info resumida
+    var perdidas = await _context.Perdida.ToListAsync();
 
-// GET: Perdida/Create
-// GET: Perdida/Create
+    // Mapear a ViewModel
+    var viewModel = perdidas.Select(p => new PerdidaRowViewModel
+    {
+        IdPerdida = p.IdPerdida,
+        Fecha = p.Fecha,
+        Motivo = p.Motivo,
+        TotalPerdida = p.Total
+    }).ToList();
+
+    return PartialView("_PerdidaList", viewModel);
+}
+
+
+      // GET: Perdida/Create (Ahora carga los precios y el stock para JS)
 public async Task<IActionResult> Create()
 {
     var vm = new PerdidaCreateViewModel
     {
         Fecha = DateTime.Now,
-        Items = new List<PerdidaDetalleViewModel>
-        {
-            new PerdidaDetalleViewModel() // <-- este hace que aparezca un producto
-        }
+        Items = new List<PerdidaDetalleViewModel>()
     };
 
-    // Cargar productos activos con cantidad disponible
-    var productosDisponibles = await _context.Inventario
+    // Consulta base para productos activos y disponibles
+    var productosQuery = _context.Inventario
         .Include(i => i.IdProductoNavigation)
-        .Where(i => i.CantidadDisponible > 0 && i.IdProductoNavigation.Estado == "Activo")
-        .Select(i => new SelectListItem
+        .Where(i => i.CantidadDisponible > 0 && i.IdProductoNavigation.Estado == "Activo");
+
+    // Obtener el stock total y el precio de compra (del lote más antiguo) por producto
+    var productosInfo = await productosQuery
+        .GroupBy(i => i.IdProducto)
+        .Select(g => new
         {
-            Value = i.IdProducto.ToString(),
-            Text = i.IdProductoNavigation.Nombre + $" (Disponibles: {i.CantidadDisponible})"
+            IdProducto = g.Key,
+            NombreProducto = g.First().IdProductoNavigation.Nombre,
+            CantidadTotal = g.Sum(i => i.CantidadDisponible),
+            // Usar el precio del lote más antiguo como referencia para el cálculo en JS
+            PrecioUnitario = g.OrderBy(i => i.IdInventario).First().PrecioCompra 
         })
-        .ToListAsync();
+        .ToDictionaryAsync(
+            keySelector: x => x.IdProducto.ToString(),
+            elementSelector: x => new { x.CantidadTotal, x.PrecioUnitario, x.NombreProducto }
+        );
 
-    ViewBag.Productos = productosDisponibles;
+    // Cargar productos activos con cantidad disponible para el Dropdown
+    ViewBag.Productos = productosInfo.Select(x => new SelectListItem
+    {
+        Value = x.Key,
+        Text = x.Value.NombreProducto + $" (Disponibles: {x.Value.CantidadTotal})"
+    }).ToList();
 
-    return PartialView("Create", vm);
+    // Diccionario de Stock para validación en JS
+    ViewBag.ProductosStock = productosInfo.ToDictionary(
+        k => k.Key,
+        v => v.Value.CantidadTotal
+    );
+
+    // Diccionario de Precios para el cálculo inicial en JS
+    ViewBag.ProductosPrecios = productosInfo.ToDictionary(
+        k => k.Key,
+        v => v.Value.PrecioUnitario
+    );
+    
+    // Retorna View. Si es HTMX, se cargará como parcial, si se accede directo, como página completa.
+    return View(vm); 
 }
 
-// POST: Perdida/Create
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> Create(PerdidaCreateViewModel model)
 {
-    // Recargar productos para mostrar nuevamente en caso de error
-   var productosDisponibles = await _context.Inventario
-    .Include(i => i.IdProductoNavigation) // propiedad de navegación correcta
-    .Where(i => i.CantidadDisponible > 0 && i.IdProductoNavigation.Estado == "Activo")
-    .Select(i => new SelectListItem
-    {
-        Value = i.IdProducto.ToString(),
-        Text = i.IdProductoNavigation.Nombre + $" (Disponibles: {i.CantidadDisponible})"
-    })
-    .ToListAsync();
+    // Recargar ViewBags para el caso de error
+    var productosQuery = _context.Inventario
+        .Include(i => i.IdProductoNavigation)
+        .Where(i => i.CantidadDisponible > 0 && i.IdProductoNavigation.Estado == "Activo");
 
-ViewBag.Productos = productosDisponibles;
-
-
-    if (!ModelState.IsValid)
-        return PartialView("Create", model);
-
-    var perdidum = new Perdidum
-    {
-        Fecha = model.Fecha,
-        Motivo = model.Motivo,
-        Total = 0m
-    };
-    _context.Perdida.Add(perdidum);
-    await _context.SaveChangesAsync();
-
-    decimal total = 0m;
-    foreach (var item in model.Items)
-    {
-        var inventario = await _context.Inventario
-            .Include(i => i.IdProductoNavigation)
-            .FirstOrDefaultAsync(i => i.IdProducto == item.IdProducto);
-
-        if (inventario == null)
+    var productosInfo = await productosQuery
+        .GroupBy(i => i.IdProducto)
+        .Select(g => new
         {
-            ModelState.AddModelError("", $"Producto con ID {item.IdProducto} no encontrado.");
-            continue;
-        }
+            IdProducto = g.Key,
+            NombreProducto = g.First().IdProductoNavigation.Nombre,
+            CantidadTotal = g.Sum(i => i.CantidadDisponible),
+            PrecioUnitario = g.OrderBy(i => i.IdInventario).First().PrecioCompra
+        })
+        .ToDictionaryAsync(
+            keySelector: x => x.IdProducto.ToString(),
+            elementSelector: x => new { x.CantidadTotal, x.PrecioUnitario, x.NombreProducto }
+        );
 
-        if (item.CantidadPerdida <= 0)
-        {
-            ModelState.AddModelError("", $"Cantidad de pérdida debe ser mayor a 0 para {inventario.IdProductoNavigation.Nombre}.");
-            continue;
-        }
+    ViewBag.Productos = productosInfo.Select(x => new SelectListItem
+    {
+        Value = x.Key,
+        Text = x.Value.NombreProducto + $" (Disponibles: {x.Value.CantidadTotal})"
+    }).ToList();
+    ViewBag.ProductosStock = productosInfo.ToDictionary(k => k.Key, v => v.Value.CantidadTotal);
+    ViewBag.ProductosPrecios = productosInfo.ToDictionary(k => k.Key, v => v.Value.PrecioUnitario);
 
-        if (item.CantidadPerdida > inventario.CantidadDisponible)
-        {
-            ModelState.AddModelError("", $"No hay suficiente cantidad disponible de {inventario.IdProductoNavigation.Nombre}. Disponible: {inventario.CantidadDisponible}.");
-            continue;
-        }
+    // Validaciones básicas
+    if (!ModelState.IsValid || model.Items == null || !model.Items.Any())
+    {
+        if (!ModelState.IsValid)
+            ModelState.AddModelError("", "Debe corregir los errores en el formulario.");
 
-     var subtotal = item.CantidadPerdida * inventario.PrecioCompra;
+        if (model.Items == null || !model.Items.Any())
+            ModelState.AddModelError("", "Debe agregar al menos un producto perdido.");
 
-var detalle = new DetallePerdidum
-{
-    IdPerdida = perdidum.IdPerdida,
-    IdProducto = item.IdProducto,
-    CantidadPerdida = item.CantidadPerdida,
-    PrecioCompraUnitario = inventario.PrecioCompra
-};
-
-_context.DetallePerdida.Add(detalle);
-
-inventario.CantidadDisponible -= item.CantidadPerdida;
-_context.Inventario.Update(inventario);
-
-var producto = await _context.Producto.FindAsync(item.IdProducto);
-if (producto != null)
-{
-    producto.Cantidad -= item.CantidadPerdida;
-
-    if (producto.Cantidad < 0)
-        producto.Cantidad = 0;
-
-    _context.Producto.Update(producto);
-}
-
-total += subtotal;
-
+        // Si es HTMX (modal) devolvemos PartialView, si es página completa, View normal
+        return IsHtmxRequest() ? PartialView("Create", model) : View(model);
     }
 
-    perdidum.Total = total;
-    _context.Perdida.Update(perdidum);
-    await _context.SaveChangesAsync();
+    using (var transaction = await _context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            var perdidum = new Perdidum
+            {
+                Fecha = model.Fecha,
+                Motivo = model.Motivo,
+                Total = 0m,
+                DetallePerdida = new List<DetallePerdidum>()
+            };
+            _context.Perdida.Add(perdidum);
 
-    if (!ModelState.IsValid)
-        return PartialView("Create", model);
+            decimal total = 0m;
 
-    Response.Headers.Add("HX-Trigger", "refreshPerdidaList, htmx:closeModal");
-    return Content("");
+            foreach (var item in model.Items)
+            {
+                var stockTotal = productosInfo.GetValueOrDefault(item.IdProducto.ToString())?.CantidadTotal ?? 0;
+                if (item.CantidadPerdida > stockTotal)
+                    throw new InvalidOperationException($"No hay suficiente stock del producto ID {item.IdProducto}.");
+
+                var inventariosAfectados = await _context.Inventario
+                    .Where(i => i.IdProducto == item.IdProducto && i.CantidadDisponible > 0)
+                    .OrderBy(i => i.IdInventario)
+                    .ToListAsync();
+
+                var cantidadRestante = item.CantidadPerdida;
+                decimal precioUnitarioUsado = 0m;
+
+                foreach (var inv in inventariosAfectados)
+                {
+                    if (cantidadRestante <= 0) break;
+
+                    var cantidadADescontar = Math.Min(cantidadRestante, inv.CantidadDisponible);
+                    inv.CantidadDisponible -= cantidadADescontar;
+                    _context.Inventario.Update(inv);
+                    cantidadRestante -= cantidadADescontar;
+
+                    if (precioUnitarioUsado == 0m)
+                        precioUnitarioUsado = inv.PrecioCompra;
+                }
+
+                if (cantidadRestante > 0)
+                    throw new InvalidOperationException($"Error concurrente: stock insuficiente del producto ID {item.IdProducto}.");
+
+                var subtotal = item.CantidadPerdida * precioUnitarioUsado;
+                total += subtotal;
+
+                var detalle = new DetallePerdidum
+                {
+                    IdProducto = item.IdProducto,
+                    CantidadPerdida = item.CantidadPerdida,
+                    PrecioCompraUnitario = precioUnitarioUsado,
+                    IdPerdidaNavigation = perdidum
+                };
+                _context.DetallePerdida.Add(detalle);
+
+                var producto = await _context.Producto.FindAsync(item.IdProducto);
+                if (producto != null)
+                {
+                    producto.Cantidad -= item.CantidadPerdida;
+                    if (producto.Cantidad < 0) producto.Cantidad = 0;
+                    _context.Producto.Update(producto);
+                }
+            }
+
+            perdidum.Total = total;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            if (IsHtmxRequest())
+            {
+                Response.Headers.Add("HX-Trigger", "refreshPerdidaList, htmx:closeModal");
+                return Content("");
+            }
+            else
+            {
+                // Página completa: redirige al índice
+                TempData["SuccessMessage"] = "Pérdida registrada correctamente.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            foreach (var item in model.Items)
+            {
+                var info = productosInfo.GetValueOrDefault(item.IdProducto.ToString());
+                if (info != null)
+                {
+                    item.NombreProducto = info.NombreProducto;
+                    item.PrecioCompraUnitario = info.PrecioUnitario;
+                }
+            }
+
+            ModelState.AddModelError("", "Error: No se pudo completar la pérdida. " + ex.Message);
+            return IsHtmxRequest() ? PartialView("Create", model) : View(model);
+        }
+    }
 }
 
-public async Task<IActionResult> Details(int? id)
+
+
+// GET: Detalles pérdida
+public async Task<IActionResult> Details(int id)
 {
-    if (id == null) return NotFound();
+    var perdida = await _context.Perdida
+        .Include(p => p.DetallePerdida)
+        .ThenInclude(d => d.IdProductoNavigation)
+        .FirstOrDefaultAsync(p => p.IdPerdida == id);
 
-    var perdidum = await _context.Perdida
-        .Include(p => p.DetallePerdida) // incluir detalles
-        .ThenInclude(d => d.IdProductoNavigation) // si quieres el nombre del producto
-        .FirstOrDefaultAsync(m => m.IdPerdida == id);
+    if (perdida == null) return NotFound();
 
-    if (perdidum == null) return NotFound();
-
-    // Mapear a ViewModel
     var vm = new PerdidaCreateViewModel
     {
-        IdPerdida = perdidum.IdPerdida,
-        Fecha = perdidum.Fecha,
-        Motivo = perdidum.Motivo,
-        Total = perdidum.Total,
-        Items = perdidum.DetallePerdida.Select(d => new PerdidaDetalleViewModel
+        IdPerdida = perdida.IdPerdida,
+        Fecha = perdida.Fecha,
+        Motivo = perdida.Motivo,
+        Items = perdida.DetallePerdida.Select(d => new PerdidaDetalleViewModel
         {
             IdProducto = d.IdProducto,
-            NombreProducto = d.IdProductoNavigation?.Nombre ?? "Desconocido",
             CantidadPerdida = d.CantidadPerdida,
-            PrecioCompraUnitario = d.PrecioCompraUnitario,
-            SubtotalPerdida = d.SubtotalPerdida
+            NombreProducto = d.IdProductoNavigation.Nombre,
+            PrecioCompraUnitario = d.PrecioCompraUnitario
         }).ToList()
     };
 
-    if (IsHtmxRequest()) return PartialView(vm);
-
-    return View(vm);
+    return IsHtmxRequest() ? PartialView("Details", vm) : View(vm);
 }
+
+
 
 // GET Edit
 // GET: Perdida/Edit/5

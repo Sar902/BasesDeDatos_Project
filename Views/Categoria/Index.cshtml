@@ -2,7 +2,7 @@
     ViewData["Title"] = "Categorías";
 }
 
-<h1>Categorías</h1>
+<h1>Listado de Categorías</h1>
 
 <p>
     <!-- 
@@ -13,7 +13,7 @@
             hx-get="@Url.Action("Create")"
             hx-target="#modal-content-generic"
             hx-swap="innerHTML">
-        <i class="bi bi-plus-circle"></i> Crear Nueva
+        <i class="bi bi-plus-circle"></i> Agregar nueva categoría
     </button>
 </p>
 
@@ -21,7 +21,7 @@
     <thead>
         <tr>
             <th>Nombre</th>
-            <th>% Ganancia</th>
+            <th>Porcentaje de Ganancia</th>
             <th>Estado</th>
             <th></th>
         </tr>

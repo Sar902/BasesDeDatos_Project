@@ -5,43 +5,47 @@
       hx-post="@Url.Action("Edit", new { id = Model.IdProveedor })"
       hx-target="this"
       hx-swap="outerHTML">
-      
-    @Html.AntiForgeryToken()
-      
+
+   @Html.AntiForgeryToken()
+
     <div class="modal-header">
-        <h5 class="modal-title">Editar Proveedor</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <h5 class="modal-title">Editar Proveedor</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
 
     <div class="modal-body">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <input type="hidden" asp-for="IdProveedor" />
-        
-        <div class="form-group">
-            <label asp-for="Nombre" class="control-label"></label>
-            <input asp-for="Nombre" class="form-control" />
-            <span asp-validation-for="Nombre" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="Contacto" class="control-label"></label>
-            <input asp-for="Contacto" class="form-control" />
-            <span asp-validation-for="Contacto" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="Estado" class="control-label"></label>
-            <input asp-for="Estado" class="form-control" />
-            <span asp-validation-for="Estado" class="text-danger"></span>
-        </div>
-    </div>
+ 
+   <div class="form-group">
+   <label asp-for="Nombre" class="control-label"></label>
+    <input asp-for="Nombre" class="form-control" />
+ <span asp-validation-for="Nombre" class="text-danger"></span>
+   </div>
+ 
+      <div class="form-group">
+     <label asp-for="Contacto" class="control-label"></label>
+     <input asp-for="Contacto" class="form-control" />
+       <span asp-validation-for="Contacto" class="text-danger"></span>
+         </div>
 
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-    </div>
+ <div class="form-group">
+<label asp-for="Estado" class="control-label"></label>
+<select asp-for="Estado" class="form-select">
+<option value="Activo">Activo</option>
+<option value="Inactivo">Inactivo</option>
+ </select>
+ <span asp-validation-for="Estado" class="text-danger"></span>
+ </div>
+
+</div>
+
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="submit" class="btn btn-primary">Guardar Cambios</button>
+</div>
 </form>
 
 @{
-    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+await Html.RenderPartialAsync("_ValidationScriptsPartial");
 }

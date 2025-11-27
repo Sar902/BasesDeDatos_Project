@@ -1,32 +1,32 @@
+@model IEnumerable<ProyectoSistemaInventarioNuevo.ViewModels.PerdidaRowViewModel>
+@using System.Globalization
+
 @foreach (var p in Model)
 {
     <tr id="perdida-@p.IdPerdida">
         <td>@p.Fecha.ToShortDateString()</td>
-        <td>@p.Total.ToString("C")</td>
+        <td>@p.TotalPerdida.ToString("C", new CultureInfo("es-NI"))</td>
         <td>@p.Motivo</td>
         <td>
             <button class="btn btn-sm btn-info"
                     hx-get="@Url.Action("Edit", new { id = p.IdPerdida })"
                     hx-target="#modal-content-generic"
-                    data-bs-toggle="modal"
-                    data-bs-target="#genericModal">
-                Editar
+                    hx-swap="innerHTML">
+                Edit
             </button>
 
             <button class="btn btn-sm btn-secondary"
                     hx-get="@Url.Action("Details", new { id = p.IdPerdida })"
                     hx-target="#modal-content-generic"
-                    data-bs-toggle="modal"
-                    data-bs-target="#genericModal">
-                Detalles
+                    hx-swap="innerHTML">
+                Details
             </button>
 
             <button class="btn btn-sm btn-danger"
                     hx-get="@Url.Action("Delete", new { id = p.IdPerdida })"
                     hx-target="#modal-content-generic"
-                    data-bs-toggle="modal"
-                    data-bs-target="#genericModal">
-                Eliminar
+                    hx-swap="innerHTML">
+                Delete
             </button>
         </td>
     </tr>

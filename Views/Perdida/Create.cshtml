@@ -1,67 +1,159 @@
 @model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaCreateViewModel
 
 @{
-    Layout = null; // Porque es modal
+    ViewData["Title"] = "Registrar Pérdida de Inventario";
 }
 
-<div class="modal-header">
-    <h5 class="modal-title">Crear Nueva Pérdida</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
+<div class="container-fluid mt-3">
+    <h1 class="mb-3">@ViewData["Title"]</h1>
+    <hr />
 
-<div class="modal-body">
-    <form hx-post="@Url.Action("Create")"
-          hx-target="#modal-content-generic"
-          hx-swap="innerHTML">
-        @Html.AntiForgeryToken()
+    <form asp-action="Create" id="form-crear-perdida">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <div asp-validation-summary="All" class="text-danger mb-2"></div>
-
-        <div class="mb-3">
-            <label asp-for="Fecha" class="form-label"></label>
-            <input asp-for="Fecha" class="form-control" type="date" />
-            <span asp-validation-for="Fecha" class="text-danger"></span>
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label asp-for="Fecha" class="control-label"></label>
+                <input asp-for="Fecha" class="form-control" type="date" />
+                <span asp-validation-for="Fecha" class="text-danger"></span>
+            </div>
+            <div class="col-md-8">
+                <label asp-for="Motivo" class="control-label"></label>
+                <input asp-for="Motivo" class="form-control" />
+                <span asp-validation-for="Motivo" class="text-danger"></span>
+            </div>
         </div>
 
-    
-        <div class="mb-3">
-            <label asp-for="Motivo" class="form-label"></label>
-            <input asp-for="Motivo" class="form-control" />
-            <span asp-validation-for="Motivo" class="text-danger"></span>
-        </div>
-
-        <hr />
-        <h6>Detalles</h6>
-        <div id="items-container">
-            @for (int i = 0; i < Model.Items.Count; i++)
-            {
-                <div class="mb-2">
-                    <label>Producto</label>
-                    <select asp-for="Items[@i].IdProducto" class="form-select">
-                        <option value="">-- Seleccione --</option>
-                        @* Aquí puedes agregar todos los productos *@
-                      @foreach(var prod in ViewBag.Productos as List<SelectListItem>)
-                      {
-                       <option value="@prod.Value">@prod.Text</option>
-                      }
-
-                    </select>
-                    <span asp-validation-for="Items[@i].IdProducto" class="text-danger"></span>
-
-                    <label>Cantidad</label>
-                    <input asp-for="Items[@i].CantidadPerdida" class="form-control" type="number" min="1" />
-                    <span asp-validation-for="Items[@i].CantidadPerdida" class="text-danger"></span>
+        <div class="card bg-warning bg-opacity-10 mb-3">
+            <div class="card-body">
+                <h4>Agregar Producto Perdido</h4>
+                <div class="row align-items-end">
+                    <div class="col-md-5">
+                        <label>Producto</label>
+                        <select id="select-producto" asp-items="ViewBag.Productos" class="form-control">
+                            <option value="">-- Seleccione Producto --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Cantidad a Perder</label>
+                        <input id="input-cantidad" type="number" value="1" min="1" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" id="btn-agregar-item" class="btn btn-danger w-100 mt-md-4">
+                            <i class="bi bi-plus"></i> Agregar
+                        </button>
+                    </div>
                 </div>
-            }
+            </div>
         </div>
 
-        <div class="mb-3">
-            <button type="submit" class="btn btn-primary">Guardar</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <h3>Detalles de la Pérdida</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Producto</th>
+                        <th class="text-center">Cantidad Perdida</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Subtotal</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="carrito-items"></tbody>
+            </table>
+        </div>
+
+        <div class="row justify-content-end mb-4">
+            <div class="col-md-4">
+                <h3 class="text-end">Costo Total: <span id="display-total">0.00</span></h3>
+                <input type="hidden" asp-for="Total" id="hidden-total" />
+            </div>
+        </div>
+
+        <div id="hidden-items-container"></div>
+
+        <div class="form-group mt-4 d-flex justify-content-between">
+            <input type="submit" value="Guardar Pérdida" class="btn btn-success btn-lg" />
+            <a asp-action="Index" class="btn btn-secondary btn-lg">Cancelar</a>
         </div>
     </form>
 </div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        var productosStock = @Html.Raw(Json.Serialize(ViewBag.ProductosStock));
+        var productosPrecios = @Html.Raw(Json.Serialize(ViewBag.ProductosPrecios));
+
+        $(function () {
+            var itemsAgregados = [];
+
+            function actualizarTotal() {
+                var total = 0;
+                $('#carrito-items tr').each(function () {
+                    total += parseFloat($(this).data('subtotal'));
+                });
+                $('#display-total').text(total.toLocaleString('es-NI', { minimumFractionDigits: 2 }));
+                $('#hidden-total').val(total);
+            }
+
+            $('#btn-agregar-item').click(function () {
+                var productoId = $('#select-producto').val();
+                var nombre = $('#select-producto option:selected').text();
+                var cantidad = parseInt($('#input-cantidad').val());
+
+                if (!productoId) { alert('Seleccione un producto'); return; }
+                if (isNaN(cantidad) || cantidad <= 0) { alert('Cantidad inválida'); return; }
+
+                var maxStock = productosStock[productoId];
+                if (cantidad > maxStock) { alert('Excede stock'); return; }
+                if (itemsAgregados.includes(productoId)) { alert('Producto ya agregado'); return; }
+
+                var precio = productosPrecios[productoId];
+                var subtotal = cantidad * precio;
+
+                $('#carrito-items').append(`
+                    <tr data-product-id="${productoId}" data-cantidad="${cantidad}" data-precio="${precio}" data-subtotal="${subtotal}">
+                        <td>${nombre}</td>
+                        <td class="text-center">${cantidad}</td>
+                        <td class="text-end">${precio.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+                        <td class="text-end">${subtotal.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-danger btn-sm btn-remover-item">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+
+                itemsAgregados.push(productoId);
+                actualizarTotal();
+                $('#input-cantidad').val(1);
+                $('#select-producto').val('');
+            });
+
+            $('#carrito-items').on('click', '.btn-remover-item', function () {
+                var fila = $(this).closest('tr');
+                var id = fila.data('product-id').toString();
+                itemsAgregados = itemsAgregados.filter(x => x !== id);
+                fila.remove();
+                actualizarTotal();
+            });
+
+            $('#form-crear-perdida').submit(function (e) {
+                $('#hidden-items-container').empty();
+                var index = 0;
+
+                $('#carrito-items tr').each(function () {
+                    var fila = $(this);
+                    $('#hidden-items-container').append(`<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`);
+                    $('#hidden-items-container').append(`<input type="hidden" name="Items[${index}].CantidadPerdida" value="${fila.data('cantidad')}" />`);
+                    index++;
+                });
+
+                if (index === 0) { alert('Agregue al menos un producto'); e.preventDefault(); return false; }
+            });
+        });
+    </script>
 }

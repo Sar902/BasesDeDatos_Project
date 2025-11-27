@@ -14,5 +14,8 @@ namespace ProyectoSistemaInventarioNuevo.ViewModels
         [Required]
         [StringLength(200)]
         public string Motivo { get; set; } = string.Empty;
+
+        // Propiedad agregada:
+        public decimal Total { get; set; } 
     }
 }

@@ -32,8 +32,10 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="submit" class="btn btn-primary"
+        hx-on::after-request="htmx.trigger(document.body, 'refreshDetalleList'); bootstrap.Modal.getInstance(document.getElementById('genericModal')).hide();">
+    Guardar Cambios
+</button>
         </div>
     </form>
 </div>

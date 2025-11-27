@@ -1,5 +1,11 @@
 @model ProyectoSistemaInventarioNuevo.ViewModels.PerdidaCreateViewModel
 @{ Layout = null; }
+@using System.Globalization  
+
+@{
+    // Define la cultura de Nicaragua (Córdoba)
+    var niCulture = new CultureInfo("es-NI");
+}
 
 <div class="modal-header">
     <h5 class="modal-title">Detalles de Pérdida del @Model.Fecha.ToShortDateString()</h5>
@@ -8,8 +14,8 @@
 
 <div class="modal-body">
     <h4>Motivo: @Model.Motivo</h4>
-    <h5>Total: @Model.Total.ToString("C")</h5>
-
+    
+    <h5>Total: @Model.Total.ToString("C", niCulture)</h5>
     <hr />
 
     <table class="table table-sm">
@@ -27,8 +33,10 @@
                 <tr>
                     <td>@item.NombreProducto</td>
                     <td>@item.CantidadPerdida</td>
-                    <td>@item.PrecioCompraUnitario.ToString("C")</td>
-                    <td>@item.SubtotalPerdida.ToString("C")</td>
+                    
+                    <td>@item.PrecioCompraUnitario.ToString("C", niCulture)</td> 
+                    
+                    <td>@item.SubtotalPerdida.ToString("C", niCulture)</td> 
                 </tr>
             }
         </tbody>

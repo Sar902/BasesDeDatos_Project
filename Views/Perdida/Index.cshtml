@@ -1,17 +1,17 @@
+
 @{
     ViewData["Title"] = "Pérdidas";
 }
 
-<h1>Pérdidas</h1>
+<h1>Listado de Pérdidas</h1>
 
 <p>
 
-    <button class="btn btn-primary"
-            hx-get="@Url.Action("Create")"
-            hx-target="#modal-content-generic"
-            hx-swap="innerHTML">
-        <i class="bi bi-plus-circle"></i> Crear nueva pérdida
-    </button>
+    <button type="button" class="btn btn-primary"
+        onclick="location.href='@Url.Action("Create")'">
+    <i class="bi bi-plus-circle"></i> Crear nueva pérdida
+</button>
+
 </p>
 
 <table class="table">

@@ -20,8 +20,8 @@
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="submit" class="btn btn-danger"
-                hx-on="htmx:afterRequest: htmx.trigger(window,'htmx:closeModal')">
-            Eliminar
-        </button>
+        hx-on::after-request="htmx.trigger(document.body, 'refreshDetalleList'); bootstrap.Modal.getInstance(document.getElementById('genericModal')).hide();">
+    Eliminar
+</button>
     </div>
 </form>
