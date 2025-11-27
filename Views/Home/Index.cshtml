@@ -14,8 +14,8 @@
     <div class="col-sm-6 col-md-3">
         <div class="card dashboard-box text-center p-3 h-100 shadow-sm">
             <i class="bi bi-currency-dollar display-4 mb-2 text-success"></i>
-            <h6 class="text-muted">Total Ventas</h6>
-            <p class="fw-bold fs-4 mb-0">$@ViewBag.TotalVentas</p>
+            <h6 class="text-muted">Total Ventas semanales</h6>
+     <p class="fw-bold fs-4 mb-0">@(ViewBag.TotalVentasSemana.ToString("C", new System.Globalization.CultureInfo("es-NI")))</p>
         </div>
     </div>
     

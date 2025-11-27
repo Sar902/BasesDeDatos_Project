@@ -40,6 +40,14 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         .Where(v => v.Fecha.Month == mesActual && v.Fecha.Year == añoActual)
         .ToListAsync();
 
+    DateTime inicioSemana = DateTime.Now.Date.AddDays(-7); 
+
+    // 2. Calcular las Ventas de la Semana
+    decimal totalVentasSemana = await _context.Venta
+        .Where(v => v.Fecha >= inicioSemana) 
+        .SumAsync(v => v.Total); 
+     ViewBag.TotalVentasSemana = totalVentasSemana;
+
     // Detalle ventas
     var detalleVentas = await _context.DetalleVenta
         .Include(dv => dv.IdProductoNavigation)

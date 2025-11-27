@@ -63,17 +63,20 @@ public async Task<IActionResult> Create()
         .Where(i => i.CantidadDisponible > 0 && i.IdProductoNavigation.Estado == "Activo");
 
     // Obtener el stock total y el precio de compra (del lote más antiguo) por producto
-    var productosInfo = await productosQuery
-        .GroupBy(i => i.IdProducto)
-        .Select(g => new
-        {
-            IdProducto = g.Key,
-            NombreProducto = g.First().IdProductoNavigation.Nombre,
-            CantidadTotal = g.Sum(i => i.CantidadDisponible),
-            // Usar el precio del lote más antiguo como referencia para el cálculo en JS
-            PrecioUnitario = g.OrderBy(i => i.IdInventario).First().PrecioCompra 
-        })
-        .ToDictionaryAsync(
+  var productosInfo = await productosQuery
+    .GroupBy(i => i.IdProducto)
+    .Select(g => new
+    {
+        IdProducto = g.Key,
+        NombreProducto = g.First().IdProductoNavigation.Nombre,
+        CantidadTotal = g.Sum(i => i.CantidadDisponible),
+        
+        // ✅ CORRECCIÓN: Calcular el precio unitario para el frontend
+        PrecioUnitario = g.OrderBy(i => i.IdInventario).First().Cantidad > 0 
+                         ? g.OrderBy(i => i.IdInventario).First().PrecioCompra / g.OrderBy(i => i.IdInventario).First().Cantidad 
+                         : 0m
+    })
+    .ToDictionaryAsync(
             keySelector: x => x.IdProducto.ToString(),
             elementSelector: x => new { x.CantidadTotal, x.PrecioUnitario, x.NombreProducto }
         );
@@ -171,36 +174,48 @@ public async Task<IActionResult> Create(PerdidaCreateViewModel model)
                     .OrderBy(i => i.IdInventario)
                     .ToListAsync();
 
-                var cantidadRestante = item.CantidadPerdida;
-                decimal precioUnitarioUsado = 0m;
 
-                foreach (var inv in inventariosAfectados)
-                {
-                    if (cantidadRestante <= 0) break;
+// CÓDIGO CORREGIDO
+var cantidadRestante = item.CantidadPerdida;
+decimal costoTotalPerdida = 0m; 
+decimal precioUnitarioReferencia = 0m; // Variable para guardar el último precio unitario usado (o el promedio)
 
-                    var cantidadADescontar = Math.Min(cantidadRestante, inv.CantidadDisponible);
-                    inv.CantidadDisponible -= cantidadADescontar;
-                    _context.Inventario.Update(inv);
-                    cantidadRestante -= cantidadADescontar;
+foreach (var inv in inventariosAfectados)
+{
+    if (cantidadRestante <= 0) break;
 
-                    if (precioUnitarioUsado == 0m)
-                        precioUnitarioUsado = inv.PrecioCompra;
-                }
+    var cantidadADescontar = Math.Min(cantidadRestante, inv.CantidadDisponible);
+    
+    decimal precioUnitarioReal = inv.Cantidad > 0 ? inv.PrecioCompra / inv.Cantidad : 0m;
+    
+    costoTotalPerdida += cantidadADescontar * precioUnitarioReal;
 
-                if (cantidadRestante > 0)
-                    throw new InvalidOperationException($"Error concurrente: stock insuficiente del producto ID {item.IdProducto}.");
+    precioUnitarioReferencia = precioUnitarioReal;
 
-                var subtotal = item.CantidadPerdida * precioUnitarioUsado;
-                total += subtotal;
+    inv.CantidadDisponible -= cantidadADescontar;
+    _context.Inventario.Update(inv);
+    cantidadRestante -= cantidadADescontar;
+}
 
-                var detalle = new DetallePerdidum
-                {
-                    IdProducto = item.IdProducto,
-                    CantidadPerdida = item.CantidadPerdida,
-                    PrecioCompraUnitario = precioUnitarioUsado,
-                    IdPerdidaNavigation = perdidum
-                };
+if (cantidadRestante > 0)
+    throw new InvalidOperationException($"Error concurrente: stock insuficiente del producto ID {item.IdProducto}.");
+
+var subtotal = costoTotalPerdida; 
+total += subtotal;
+
+ decimal precioUnitarioParaDetalle = item.CantidadPerdida > 0 ? subtotal / item.CantidadPerdida : 0m;
+
+
+ var detalle = new DetallePerdidum
+  {
+    IdProducto = item.IdProducto,
+    CantidadPerdida = item.CantidadPerdida,
+    PrecioCompraUnitario = precioUnitarioParaDetalle, 
+    IdPerdidaNavigation = perdidum
+   };
                 _context.DetallePerdida.Add(detalle);
+    
+
 
                 var producto = await _context.Producto.FindAsync(item.IdProducto);
                 if (producto != null)
