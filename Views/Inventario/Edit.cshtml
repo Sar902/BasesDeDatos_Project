@@ -57,10 +57,9 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="CantidadDisponible" class="control-label fw-bold text-success">Cantidad Disponible (Stock)</label>
-                                    <input asp-for="CantidadDisponible" class="form-control" type="number" />
-                                    <span asp-validation-for="CantidadDisponible" class="text-danger"></span>
-                                    <small class="text-muted">No puede ser mayor a la cantidad original.</small>
+                                    <label class="control-label">Cantidad Disponible (Calculado)</label>
+                                    <input type="text" class="form-control" value="@Model.CantidadDisponible" readonly disabled style="background-color: #e9ecef;" />
+                                    <small class="text-muted">Este valor se ajustará automáticamente si cambias la Cantidad Total.</small>
                                 </div>
                             </div>
                         </div>

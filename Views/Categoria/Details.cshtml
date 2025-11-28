@@ -1,20 +1,87 @@
 @model ProyectoSistemaInventarioNuevo.Models.Categorium
-@{ Layout = null; } <div class="modal-header">
-    <h5 class="modal-title">Detalles de Categoría</h5>
+@{ Layout = null; }
+
+<div class="modal-header">
+    <h5 class="modal-title">Detalles de Categoría: @Model.Nombre</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
+
 <div class="modal-body">
-    <dl class="row">
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Nombre)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Nombre)</dd>
-        
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.PorcentajeGanancia)</dt> 
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.PorcentajeGanancia)</dd>
-        
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Estado)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Estado)</dd>
-    </dl>
+    <div class="card mb-3 border-0 bg-light">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-6">Porcentaje de Ganancia:</dt>
+                <dd class="col-sm-6 text-end">@Html.DisplayFor(model => model.PorcentajeGanancia)%</dd>
+
+                <dt class="col-sm-6">Estado:</dt>
+                <dd class="col-sm-6 text-end">
+                    @if (Model.Estado == "Activo")
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inactivo</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <h6 class="fw-bold mb-2">Productos Asociados (@Model.Producto.Count)</h6>
+
+    @if (Model.Producto.Any())
+    {
+        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-sm table-striped table-hover font-monospace" style="font-size: 0.9em;">
+                <thead class="table-dark sticky-top">
+                    <tr>
+                        <th>Producto</th>
+                        <th class="text-center">Stock</th>
+                        <th class="text-end">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var prod in Model.Producto.OrderBy(p => p.Nombre))
+                    {
+                        <tr>
+                            <td>@prod.Nombre</td>
+                            <td class="text-center">
+                                @if(prod.Cantidad <= 5)
+                                {
+                                    <span class="text-danger fw-bold">@prod.Cantidad</span>
+                                }
+                                else
+                                {
+                                    <span>@prod.Cantidad</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <span class="badge @(prod.Estado == "Activo" ? "bg-success" : "bg-secondary")" 
+                                      style="font-size: 0.7em;">
+                                    @prod.Estado
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info py-2" role="alert">
+            <i class="bi bi-info-circle"></i> No hay productos registrados en esta categoría.
+        </div>
+    }
 </div>
-<div class="modal-footer">
+
+<div class="modal-footer justify-content-between">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    
+    <button class="btn btn-warning"
+            hx-get="@Url.Action("Edit", new { id = Model.IdCategoria })"
+            hx-target="#modal-content-generic">
+        <i class="bi bi-pencil"></i> Editar
+    </button>
 </div>

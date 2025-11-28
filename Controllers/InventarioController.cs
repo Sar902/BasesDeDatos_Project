@@ -84,37 +84,48 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // =====================================================================
         // INDEX GENERAL
         // =====================================================================
-
-        // Página principal: solo carga la carcasa del frontend.
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? fechaInicio, DateTime? fechaFin, int? idProveedor, int? idProducto)
         {
-            // 1. Traemos TODOS los datos crudos (incluyendo nombres de productos y proveedores)
-            var inventarioCrudo = await _context.Inventario
+            // 1. Cargar listas para los filtros (Proveedores y Productos)
+            ViewData["Proveedores"] = new SelectList(await _context.Proveedor.OrderBy(p => p.Nombre).AsNoTracking().ToListAsync(), "IdProveedor", "Nombre", idProveedor);
+            
+            // Cargamos productos ordenados alfabéticamente para facilitar la búsqueda
+            ViewData["Productos"] = new SelectList(await _context.Producto.OrderBy(p => p.Nombre).AsNoTracking().ToListAsync(), "IdProducto", "Nombre", idProducto);
+
+            // 2. Query Base
+            var query = _context.Inventario
                 .Include(i => i.IdProductoNavigation)
                 .Include(i => i.IdProveedorNavigation)
                 .AsNoTracking()
-                .OrderByDescending(i => i.FechaEntrada)
-                .ToListAsync();
+                .AsQueryable();
 
-            // 2. HACEMOS LA MAGIA: Agrupar en memoria
-            // La lógica es: Si tienen la misma Fecha y el mismo Proveedor, pertenecen a la misma "Compra"
+            // 3. Aplicar Filtros
+            if (fechaInicio.HasValue) query = query.Where(i => i.FechaEntrada >= fechaInicio.Value);
+            if (fechaFin.HasValue) query = query.Where(i => i.FechaEntrada < fechaFin.Value.AddDays(1));
+            if (idProveedor.HasValue) query = query.Where(i => i.IdProveedor == idProveedor);
+            
+            // --- NUEVO FILTRO DE PRODUCTO ---
+            if (idProducto.HasValue)
+            {
+                query = query.Where(i => i.IdProducto == idProducto);
+            }
+
+            // 4. Ejecutar y Agrupar
+            // Nota: Al filtrar por producto, los grupos (compras) solo mostrarán 
+            // las líneas que coincidan con ese producto, lo cual es perfecto para el análisis.
+            var inventarioCrudo = await query.OrderByDescending(i => i.FechaEntrada).ToListAsync();
+
             var comprasVirtuales = inventarioCrudo
                 .GroupBy(x => new { x.FechaEntrada.Date, x.IdProveedor }) 
                 .Select(grupo => new CompraAgrupadaViewModel
                 {
                     Fecha = grupo.Key.Date,
-                    // Si el proveedor es null, ponemos "Sin Proveedor"
                     NombreProveedor = grupo.First().IdProveedorNavigation?.Nombre ?? "Proveedor Desconocido",
-                    
-                    // Calculamos el total sumando (Cantidad * PrecioCompra) de cada item
                     TotalCompra = grupo.Sum(item => item.Cantidad * item.PrecioCompra),
-                    
                     CantidadLotes = grupo.Count(),
-                    
-                    // Guardamos la lista de items por si queremos ver el detalle
                     Lotes = grupo.ToList()
                 })
-                .OrderByDescending(x => x.Fecha) // Las más recientes primero
+                .OrderByDescending(x => x.Fecha)
                 .ToList();
 
             return View(comprasVirtuales);
@@ -248,65 +259,71 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             // Ahora siempre devolvemos la Vista normal (sin modal)
             return View(inventario);
         }
+
+        // POST: Inventario/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdInventario,IdProducto,IdProveedor,Cantidad,CantidadDisponible,PrecioCompra,FechaEntrada,FechaSalida,Estado")] Inventario inventario)
+        public async Task<IActionResult> Edit(int id, [Bind("IdInventario,IdProducto,IdProveedor,Cantidad,PrecioCompra,FechaEntrada,Estado")] Inventario inventario)
         {
+            // NOTA: Quité 'CantidadDisponible' del Bind de arriba para protegerlo.
+
             if (id != inventario.IdInventario) return NotFound();
+
+            // Validamos manualmente porque quitamos campos del Bind
+            if (inventario.PrecioCompra < 0) ModelState.AddModelError("PrecioCompra", "El precio no puede ser negativo");
+            if (inventario.Cantidad < 1) ModelState.AddModelError("Cantidad", "La cantidad debe ser mayor a 0");
 
             if (ModelState.IsValid)
             {
-                // Obtenemos el lote original antes de actualizar
-                var inventarioOriginal = await _context.Inventario
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(i => i.IdInventario == id);
+                // Traemos el original "AsNoTracking" false para poder rastrear cambios o solo lectura
+                var inventarioOriginal = await _context.Inventario.AsNoTracking().FirstOrDefaultAsync(i => i.IdInventario == id);
 
                 if (inventarioOriginal == null) return NotFound();
 
-                // Validación: no permitir disponible > cantidad total
-                if (inventario.CantidadDisponible > inventario.Cantidad)
-                {
-                    ModelState.AddModelError("CantidadDisponible",
-                        "La cantidad disponible no puede ser mayor que la cantidad total del lote.");
-                }
+                // 1. CÁLCULO DE INTEGRIDAD
+                // Calculamos cuántos items se han gastado de este lote hasta hoy
+                int itemsGastados = inventarioOriginal.Cantidad - inventarioOriginal.CantidadDisponible;
 
-                if (!ModelState.IsValid)
+                // Si el usuario reduce la cantidad total a menos de lo que ya se gastó, es un error.
+                if (inventario.Cantidad < itemsGastados)
                 {
+                    ModelState.AddModelError("Cantidad", $"No puedes reducir la cantidad a {inventario.Cantidad} porque ya se han vendido {itemsGastados} unidades de este lote. El mínimo permitido es {itemsGastados}.");
                     await PopulateDropdowns(inventario);
-                    return PartialView("Edit", inventario);
+                    return View(inventario);
                 }
 
-                using (var transaction = _context.Database.BeginTransaction())
+                // 2. ACTUALIZACIÓN AUTOMÁTICA
+                // La nueva disponibilidad es la Nueva Cantidad Total - Lo que ya se gastó
+                inventario.CantidadDisponible = inventario.Cantidad - itemsGastados;
+
+                // Mantener campos que no deberían cambiar o que no vienen en el form
+                // (Opcional: Si quieres bloquear cambio de producto, descomenta la siguiente linea)
+                // inventario.IdProducto = inventarioOriginal.IdProducto; 
+
+                try
                 {
-                    try
+                    _context.Update(inventario);
+                    await _context.SaveChangesAsync();
+
+                    await RecalculateMasterStock(inventario.IdProducto);
+                    
+                    // Si cambió de producto (raro pero posible), recalculamos el stock del producto viejo también
+                    if (inventarioOriginal.IdProducto != inventario.IdProducto)
                     {
-                        _context.Update(inventario);
-                        await _context.SaveChangesAsync();
-
-                        // Recalcular stock maestro del nuevo producto
-                        await RecalculateMasterStock(inventario.IdProducto);
-
-                        // Si cambió el producto, recalcular también el anterior
-                        if (inventarioOriginal.IdProducto != inventario.IdProducto)
-                        {
-                            await RecalculateMasterStock(inventarioOriginal.IdProducto);
-                        }
-
-                        await transaction.CommitAsync();
-
-                        Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshInventarioList");
-                        return Content("", "text/html");
+                        await RecalculateMasterStock(inventarioOriginal.IdProducto);
                     }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        ModelState.AddModelError("", "Error al actualizar: " + ex.Message);
-                    }
+                    
+                    // Retorno directo a Index
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "Error al actualizar: " + ex.Message);
                 }
             }
 
             await PopulateDropdowns(inventario);
-            return PartialView("Edit", inventario);
+            return View(inventario);
         }
 
         // =====================================================================
@@ -327,10 +344,9 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             if (inventario == null) return NotFound();
 
             // Devolvemos la vista completa estándar
-            return View(inventario);
+              return View(inventario);
         }
-
-        // POST: Inventario/Delete/5
+        
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -338,43 +354,46 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             var inventario = await _context.Inventario.FindAsync(id);
             if (inventario == null) return NotFound();
 
-            // Validar si tiene devoluciones asociadas antes de borrar
-            bool tieneSolicitudes = await _context.SolicitudDevolucion.AnyAsync(s => s.IdInventario == id);
-            if (tieneSolicitudes)
+            // 1. VALIDACIÓN CRÍTICA: ¿El lote está intacto?
+            // Si la cantidad inicial es distinta a la disponible, significa que ya se vendió o movió algo.
+            if (inventario.Cantidad != inventario.CantidadDisponible)
             {
-                ModelState.AddModelError("", "No se puede borrar: Este lote tiene devoluciones asociadas.");
+                ModelState.AddModelError("", "No se puede eliminar esta compra porque ya se han vendido o utilizado productos de este lote. Realice un ajuste de inventario o una devolución en su lugar.");
                 
-                // Recargar relaciones para mostrar la vista de error correctamente
+                // Recargamos datos para volver a mostrar la vista con el error
                 await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
                 await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
                 return View("Delete", inventario);
             }
 
+            // 2. Validación de Devoluciones (que ya tenías)
+            bool tieneSolicitudes = await _context.SolicitudDevolucion.AnyAsync(s => s.IdInventario == id);
+            if (tieneSolicitudes)
+            {
+                ModelState.AddModelError("", "No se puede borrar: Este lote tiene devoluciones asociadas.");
+                await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
+                await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
+                return View("Delete", inventario);
+            }
+
+            // 3. Proceder a borrar
             using (var transaction = _context.Database.BeginTransaction())
             {
                 try
                 {
                     int idProductoAfectado = inventario.IdProducto;
-
                     _context.Inventario.Remove(inventario);
                     await _context.SaveChangesAsync();
 
-                    // IMPORTANTE: Recalcular el stock maestro del producto al borrar
                     await RecalculateMasterStock(idProductoAfectado);
-
                     await transaction.CommitAsync();
                     
-                    // Redirigir al índice general
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
                     ModelState.AddModelError("", "Error al borrar: " + ex.Message);
-                    
-                    // Recargar relaciones para la vista de error
-                    await _context.Entry(inventario).Reference(i => i.IdProductoNavigation).LoadAsync();
-                    await _context.Entry(inventario).Reference(i => i.IdProveedorNavigation).LoadAsync();
                     return View("Delete", inventario);
                 }
             }

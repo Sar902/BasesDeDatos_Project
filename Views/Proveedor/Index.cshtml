@@ -1,42 +1,97 @@
 @{
-    ViewData["Title"] = "Proveedores";
+    ViewData["Title"] = "Gestión de Proveedores";
 }
 
-<h1>Proveedores</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark"><i class="bi bi-people-fill text-primary me-2"></i>Proveedores</h1>
+        <p class="text-muted mb-0">Gestione su cartera de proveedores y contactos.</p>
+    </div>
+    
+    <div class="bg-white p-2 rounded shadow-sm border text-center" style="min-width: 150px;">
+        <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem;">Activos</small>
+        <span class="fs-4 fw-bold text-success"
+              hx-get="@Url.Action("GetProveedorCount")"
+              hx-trigger="load, refreshProveedorList from:body"
+              hx-swap="innerHTML">
+            <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+        </span>
+    </div>
+</div>
 
-<h4 class="mb-3">
-    Proveedores Activos: 
-    <span class="badge bg-success"
-          hx-get="@Url.Action("GetProveedorCount")"
-          hx-trigger="load, refreshProveedorList from:body"
-          hx-swap="innerHTML">
-        ...
-    </span>
-</h4>
+<div class="card mb-4 shadow-sm border-0 bg-light">
+    <div class="card-body py-3">
+        <div class="row g-3 align-items-center">
+            
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100 shadow-sm"
+                        hx-get="@Url.Action("Create")"
+                        hx-target="#modal-content-generic"
+                        hx-swap="innerHTML">
+                    <i class="bi bi-plus-lg me-1"></i> Nuevo Proveedor
+                </button>
+            </div>
 
-<p>
-    <button class="btn btn-primary"
-            hx-get="@Url.Action("Create")"
-            hx-target="#modal-content-generic"
-            hx-swap="innerHTML">
-        <i class="bi bi-plus-circle"></i> Crear Nuevo Proveedor
-    </button>
-</p>
+            <div class="col-md-6">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" 
+                           class="form-control border-start-0 ps-0 filter-input" 
+                           name="searchString" 
+                           placeholder="Buscar por nombre, teléfono o empresa..."
+                           hx-get="@Url.Action("GetProveedorList")"
+                           hx-target="#proveedor-tbody"
+                           hx-trigger="keyup changed delay:500ms" 
+                           hx-include=".filter-input"
+                           autocomplete="off">
+                </div>
+            </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Contacto</th>
-            <th>Estado</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody id="proveedor-tbody"
-           hx-get="@Url.Action("GetProveedorList")"
-           hx-trigger="load, refreshProveedorList from:body"
-           hx-swap="innerHTML">
-           
-           <tr><td colspan="4">Cargando proveedores...</td></tr>
-    </tbody>
-</table>
+            <div class="col-md-3">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white text-muted"><i class="bi bi-funnel"></i></span>
+                    <select class="form-select border-start-0 filter-input" 
+                            name="statusFilter"
+                            hx-get="@Url.Action("GetProveedorList")"
+                            hx-target="#proveedor-tbody"
+                            hx-trigger="change"
+                            hx-include=".filter-input">
+                        <option value="Activo" selected>Ver Activos</option>
+                        <option value="Inactivo">Ver Inactivos</option>
+                        <option value="Todos">Ver Todos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase text-secondary small fw-bold">Empresa / Nombre</th>
+                        <th class="text-uppercase text-secondary small fw-bold">Contacto</th>
+                        <th class="text-uppercase text-secondary small fw-bold">Estado</th>
+                        <th class="text-end pe-4 text-uppercase text-secondary small fw-bold">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="proveedor-tbody"
+                       hx-get="@Url.Action("GetProveedorList")"
+                       hx-trigger="load, refreshProveedorList from:body"
+                       hx-include=".filter-input"
+                       hx-swap="innerHTML">
+                       
+                       <tr>
+                           <td colspan="4" class="text-center py-5">
+                               <div class="spinner-border text-primary" role="status"></div>
+                               <p class="text-muted mt-2">Cargando proveedores...</p>
+                           </td>
+                       </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

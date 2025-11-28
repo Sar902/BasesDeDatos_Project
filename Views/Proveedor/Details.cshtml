@@ -2,21 +2,79 @@
 @{ Layout = null; }
 
 <div class="modal-header">
-    <h5 class="modal-title">Detalles del Proveedor</h5>
+    <h5 class="modal-title">Ficha de Proveedor: @Model.Nombre</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
-<div class="modal-body">
-    <dl class="row">
-        <dt class="col-sm-4">Nombre</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Nombre)</dd>
-        
-        <dt class="col-sm-4">Contacto</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Contacto)</dd>
 
-        <dt class="col-sm-4">Estado</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Estado)</dd>
-    </dl>
+<div class="modal-body">
+    <div class="card mb-3 border-0 bg-light">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Contacto / Teléfono</small>
+                    <span class="fw-bold">@(Model.Contacto ?? "N/A")</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted d-block">Estado Actual</small>
+                    @if (Model.Estado == "Activo")
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactivo</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="fw-bold mt-3 mb-2"><i class="bi bi-clock-history"></i> Historial de Compras Recientes</h6>
+    
+    @if (Model.Inventario.Any())
+    {
+        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+            <table class="table table-sm table-striped font-monospace" style="font-size: 0.85rem;">
+                <thead class="table-dark sticky-top">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th class="text-center">Cant.</th>
+                        <th class="text-end">Costo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Inventario.OrderByDescending(i => i.FechaEntrada).Take(10))
+                    {
+                        <tr>
+                            <td>@item.FechaEntrada.ToShortDateString()</td>
+                            <td>@item.IdProductoNavigation?.Nombre</td>
+                            <td class="text-center">@item.Cantidad</td>
+                            <td class="text-end">C$ @item.PrecioCompra.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-1">
+            <small class="text-muted">Mostrando los últimos 10 registros de @Model.Inventario.Count totales.</small>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info py-2 small">
+            <i class="bi bi-info-circle"></i> No se han registrado compras a este proveedor aún.
+        </div>
+    }
+
 </div>
-<div class="modal-footer">
+
+<div class="modal-footer justify-content-between">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    
+    <button class="btn btn-warning"
+            hx-get="@Url.Action("Edit", new { id = Model.IdProveedor })"
+            hx-target="#modal-content-generic">
+        <i class="bi bi-pencil"></i> Editar Datos
+    </button>
 </div>

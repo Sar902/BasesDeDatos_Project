@@ -39,12 +39,25 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // Devuelve únicamente el fragmento HTML de la tabla
         // -------------------------------------------------------------
         [HttpGet]
-        public async Task<IActionResult> GetProveedorList()
+        public async Task<IActionResult> GetProveedorList(string searchString, string statusFilter)
         {
-            var proveedores = await _context.Proveedor
-                                            .AsNoTracking()         // Optimiza consulta cuando no se modificará la entidad
-                                            .OrderBy(p => p.Nombre) // Orden alfabético
-                                            .ToListAsync();
+            var query = _context.Proveedor.AsNoTracking().AsQueryable();
+
+            // Filtro por Nombre
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(p => p.Nombre.Contains(searchString));
+            }
+
+            // Filtro por Estado (Por defecto mostramos Activos si no se especifica)
+            if (string.IsNullOrEmpty(statusFilter)) statusFilter = "Activo";
+
+            if (statusFilter != "Todos")
+            {
+                query = query.Where(p => p.Estado == statusFilter);
+            }
+
+            var proveedores = await query.OrderBy(p => p.Nombre).ToListAsync();
 
             return PartialView("_ProveedorList", proveedores);
         }
@@ -70,18 +83,18 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             if (id == null) return NotFound();
 
             var proveedor = await _context.Proveedor
+                .Include(p => p.Inventario) // Incluimos la lista de compras/entradas
+                    .ThenInclude(i => i.IdProductoNavigation) // Y el nombre del producto
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.IdProveedor == id);
 
             if (proveedor == null) return NotFound();
 
-            // Si la petición es HTMX devolvemos solo el fragmento HTML
             if (IsHtmxRequest())
             {
                 return PartialView("Details", proveedor);
             }
 
-            // Vista completa (no modal)
             return View(proveedor);
         }
 
@@ -105,31 +118,27 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // -------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Nombre,Contacto,Estado")] Proveedor proveedor)
+        public async Task<IActionResult> Create([Bind("Nombre,Contacto")] Proveedor proveedor) // Quitamos "Estado" del Bind
         {
+            // 1. Lógica automática
             proveedor.Estado = "Activo";
 
-            // ✔ Validación: evitar duplicados por nombre
+            // 2. Validación manual de duplicados
             bool existe = await _context.Proveedor.AnyAsync(p => p.Nombre == proveedor.Nombre);
             if (existe)
             {
-                ModelState.AddModelError("Nombre", "Ya existe un proveedor con este nombre.");
+                ModelState.AddModelError("Nombre", "Ya existe un proveedor registrado con este nombre.");
             }
 
-            // Si pasa las validaciones
             if (ModelState.IsValid)
             {
                 _context.Add(proveedor);
                 await _context.SaveChangesAsync();
-
-                // Trigger HTMX para cerrar modal y refrescar tabla
+                // HTMX cierra el modal y refresca la lista
                 Response.Headers.Add("HX-Trigger", "htmx:closeModal, refreshProveedorList");
-
-                // Devolvemos respuesta vacía (HTMX no necesita más)
                 return Content("", "text/html");
             }
 
-            // Si falló validación, devolvemos el formulario con errores
             return PartialView("Create", proveedor);
         }
 

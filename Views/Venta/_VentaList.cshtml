@@ -1,24 +1,42 @@
 @model IEnumerable<ProyectoSistemaInventarioNuevo.Models.VVentum>
 
-@foreach (var item in Model) {
+@if (!Model.Any())
+{
     <tr>
-        <td>@Html.DisplayFor(modelItem => item.IdVenta)</td>
-        <td>@Html.DisplayFor(modelItem => item.Fecha)</td>
-        <td>@Html.DisplayFor(modelItem => item.Total)</td>
-        <td>@Html.DisplayFor(modelItem => item.GananciaTotal)</td>
-        <td>
-            <button class="btn btn-info btn-sm"
-               hx-get="@Url.Action("Details", new { id = item.IdVenta })"
-               hx-target="#modal-content-generic"
-               hx-swap="innerHTML">
-                Details
-            </button> |
-            <button class="btn btn-danger btn-sm"
-               hx-get="@Url.Action("Delete", new { id = item.IdVenta })"
-               hx-target="#modal-content-generic"
-               hx-swap="innerHTML">
-                Delete
-            </button>
+        <td colspan="5" class="text-center text-muted fst-italic py-4">
+            No se encontraron ventas con estos filtros.
         </td>
     </tr>
+}
+else
+{
+    foreach (var item in Model)
+    {
+        <tr>
+            <td class="fw-bold text-primary">#@item.IdVenta</td>
+            <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+            <td class="text-end fw-bold">C$ @item.Total.ToString("N2")</td>
+            <td class="text-end text-success">
+                C$ @item.GananciaTotal.ToString("N2")
+            </td>
+            <td class="text-center">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-info text-white"
+                            hx-get="@Url.Action("Details", new { id = item.IdVenta })"
+                            hx-target="#modal-content-generic"
+                            hx-swap="innerHTML"
+                            title="Ver Detalles">
+                        <i class="bi bi-eye"></i>
+                    </button>
+
+                    <a href="@Url.Action("ImprimirFactura", new { id = item.IdVenta })" 
+                       target="_blank" 
+                       class="btn btn-sm btn-secondary" 
+                       title="Imprimir Factura">
+                        <i class="bi bi-printer"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    }
 }

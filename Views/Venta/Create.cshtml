@@ -86,171 +86,168 @@
 
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 
     <script>
         $(document).ready(function () {
 
             var itemsEnCarrito = []; 
 
-            // -- Evento 1: Cuando se selecciona un producto del dropdown --
+            // ==========================================
+            // PUNTO 2 y 4: Lógica de Producto y Stock
+            // ==========================================
+
+            // Al seleccionar producto
             $('#select-producto').change(function () {
                 var productoId = $(this).val();
                 
                 if (productoId) {
                     $.get('/Venta/GetProductoDetails', { id: productoId }, function (data) {
-                        // Mostramos el precio con COMA
+                        // 1. Precio
                         $('#input-precio').val(data.precioVenta.toFixed(2).replace('.', ','));
                         
-                        // NUEVO: Asignar stock al input visual
-                        $('#input-stock').val(data.stockActual);
-                        
-                        // Opcional: Ajustar el máximo del input cantidad para no vender más de lo que hay
-                        $('#input-cantidad').attr('max', data.stockActual);
+                        // 2. Stock Visual (PUNTO 4)
+                        var stock = data.stockActual;
+                        $('#input-stock').val(stock);
+
+                        // Lógica de colores y bloqueo
+                        $('#input-stock').removeClass('bg-warning text-dark bg-danger text-white bg-light');
+                        $('#btn-agregar-item').prop('disabled', false);
+
+                        if (stock <= 0) {
+                            $('#input-stock').addClass('bg-danger text-white'); // Rojo si es 0
+                            $('#btn-agregar-item').prop('disabled', true);      // Bloquear botón
+                            alert('¡Atención! Este producto no tiene stock disponible.');
+                        } 
+                        else if (stock <= 5) {
+                            $('#input-stock').addClass('bg-warning text-dark'); // Amarillo si es bajo
+                        } 
+                        else {
+                            $('#input-stock').addClass('bg-light'); // Normal
+                        }
+
+                        // Ajustar máximo del input
+                        $('#input-cantidad').attr('max', stock);
+                        $('#input-cantidad').val(1);
+                        $('#input-cantidad').focus(); // Mover cursor a cantidad automáticamente
 
                     }).fail(function() {
                         alert('Error al obtener los detalles del producto.');
                     });
                 } else {
-                    $('#input-precio').val('');
-                    $('#input-stock').val(''); // Limpiar stock si se deselecciona
+                    limpiarCamposProducto();
                 }
             });
 
-            // -- Evento 2: Cuando se presiona "Agregar al Carrito" --
+            // PUNTO 2: Agregar con tecla ENTER en el campo cantidad
+            $('#input-cantidad').keypress(function (e) {
+                if (e.which == 13) { // Código 13 es Enter
+                    e.preventDefault(); // Evitar submit del form principal
+                    $('#btn-agregar-item').click(); // Disparar el click del botón agregar
+                }
+            });
+
+            // Botón Agregar al Carrito
             $('#btn-agregar-item').click(function () {
                 var productoId = $('#select-producto').val();
                 var cantidad = parseInt($('#input-cantidad').val());
-                // Leemos el valor con COMA y lo convertimos a número (con punto)
                 var precio = parseFloat($('#input-precio').val().replace(',', '.'));
                 var nombre = $('#select-producto option:selected').text();
-                
-                // NUEVO: Leer stock disponible para validación en cliente
                 var stockDisponible = parseInt($('#input-stock').val());
 
                 // Validaciones
-                if (!productoId) {
-                    alert('Debe seleccionar un producto.');
-                    return;
-                }
-                if (isNaN(cantidad) || cantidad <= 0) {
-                    alert('Debe ingresar una cantidad válida.');
-                    return;
-                }
-                // Validación extra de stock
+                if (!productoId) { alert('Debe seleccionar un producto.'); return; }
+                if (isNaN(cantidad) || cantidad <= 0) { alert('Cantidad inválida.'); return; }
+                
+                // Validación Stock (PUNTO 4 - Frontend)
                 if (!isNaN(stockDisponible) && cantidad > stockDisponible) {
-                    alert('La cantidad no puede superar el stock disponible (' + stockDisponible + ').');
-                    return;
-                }
-
-                if (isNaN(precio)) {
-                    // Validamos que el input de precio no esté vacío o mal escrito
-                    alert('El precio no es válido. Asegúrese de usar comas para decimales.');
+                    alert('No puedes vender ' + cantidad + '. Solo hay ' + stockDisponible + ' en stock.');
                     return;
                 }
 
                 if (itemsEnCarrito.includes(productoId)) {
-                    alert('Este producto ya está en el carrito.');
-                    return;
+                    alert('Este producto ya está en el carrito.'); return;
                 }
 
                 var subtotal = cantidad * precio;
-                // Usamos toLocaleString para mostrar comas en la tabla del carrito
-                var precioDisplay = precio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                var subtotalDisplay = subtotal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 
-                // Almacenamos los números (con punto) en 'data-'
+                // Crear fila HTML
                 var fila = `
                     <tr data-product-id="${productoId}" 
                         data-cantidad="${cantidad}" 
                         data-precio="${precio}" 
                         data-subtotal="${subtotal}"
                         data-nombre="${nombre}">
-                        
                         <td>${nombre}</td>
                         <td>${cantidad}</td>
-                        <td>${precioDisplay}</td>
-                        <td>${subtotalDisplay}</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm btn-remover-item">Quitar</button>
-                        </td>
+                        <td>${precio.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+                        <td>${subtotal.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+                        <td><button type="button" class="btn btn-danger btn-sm btn-remover-item"><i class="bi bi-trash"></i></button></td>
                     </tr>`;
                 
                 $('#carrito-items').append(fila);
                 itemsEnCarrito.push(productoId);
+                
                 actualizarTotal();
-                limpiarCamposProducto();
+                limpiarCamposProducto(); // Esto ahora re-enfocará el buscador (PUNTO 2)
             });
 
-            // -- Evento 3: Cuando se presiona "Quitar" de un item --
+            // Remover item
             $('#carrito-items').on('click', '.btn-remover-item', function () {
                 var fila = $(this).closest('tr');
                 var productoId = fila.data('product-id').toString();
-                
                 itemsEnCarrito = itemsEnCarrito.filter(id => id !== productoId);
                 fila.remove();
                 actualizarTotal();
             });
 
-            // -- Evento 4: Antes de enviar el formulario (LA MAGIA) --
+            // Submit del formulario
             $('#form-crear-venta').submit(function (e) {
                 $('#hidden-items-container').empty();
                 var index = 0;
 
                 $('#carrito-items tr').each(function () {
                     var fila = $(this);
+                    var precioStr = fila.data('precio').toString().replace('.', ','); 
                     
-                    // Convertimos los números a strings con COMA para el backend
-                    var precioString = fila.data('precio').toString().replace('.', ',');
-                    var subtotalString = fila.data('subtotal').toString().replace('.', ',');
-
-                    $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`
-                    );
-                    $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].NombreProducto" value="${fila.data('nombre')}" />`
-                    );
-                    $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].Cantidad" value="${fila.data('cantidad')}" />`
-                    );
-                    $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${precioString}" />`
-                    );
-                    $('#hidden-items-container').append(
-                        `<input type="hidden" name="Items[${index}].Subtotal" value="${subtotalString}" />`
-                    );
+                    // Generar inputs ocultos para el backend
+                    $('#hidden-items-container').append(`<input type="hidden" name="Items[${index}].IdProducto" value="${fila.data('product-id')}" />`);
+                    $('#hidden-items-container').append(`<input type="hidden" name="Items[${index}].Cantidad" value="${fila.data('cantidad')}" />`);
+                    $('#hidden-items-container').append(`<input type="hidden" name="Items[${index}].PrecioVentaUnitario" value="${precioStr}" />`);
+                    // El subtotal y nombre no son estrictamente necesarios para el bind del modelo, pero ayudan si hay errores de validación
                     index++;
                 });
 
                 if (index === 0) {
-                    alert('Debe agregar al menos un producto a la venta.');
-                    e.preventDefault(); 
+                    alert('El carrito está vacío.');
+                    e.preventDefault();
                     return false;
                 }
                 return true;
             });
 
-            // -- Función para actualizar el total --
+            // Funciones Auxiliares
             function actualizarTotal() {
-                var totalVenta = 0.0;
+                var total = 0;
                 $('#carrito-items tr').each(function () {
-                    totalVenta += parseFloat($(this).data('subtotal'));
+                    total += parseFloat($(this).data('subtotal'));
                 });
-                // Mostramos el total con COMA
-                $('#display-total').text(totalVenta.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#display-total').text(total.toLocaleString('es-NI', { minimumFractionDigits: 2 }));
+                $('#hidden-total').val(total.toString().replace('.', ','));
                 
-                // Enviamos el total con COMA
-                $('#hidden-total').val(totalVenta.toString().replace('.', ','));
+                // Si tienes la función calcularCambio() del consejo anterior, llámala aquí:
+                // if (typeof calcularCambio === "function") calcularCambio();
             }
 
-            // -- Función para limpiar los campos de producto --
             function limpiarCamposProducto() {
-                $('#select-producto').val('');
-                $('#input-cantidad').val('1');
+                $('#select-producto').val(''); // Reset select
+                $('#input-stock').val('').removeClass('bg-warning bg-danger text-white').addClass('bg-light'); // Reset stock visual
+                $('#input-cantidad').val(1);
                 $('#input-precio').val('');
-                $('#input-stock').val(''); // Limpiamos también el stock
+                $('#btn-agregar-item').prop('disabled', false); // Reactivar botón por si acaso
+                
+                // PUNTO 2: Re-enfocar el buscador para seguir vendiendo rápido
+                $('#select-producto').focus(); 
             }
         });
     </script>

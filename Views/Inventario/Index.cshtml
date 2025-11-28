@@ -1,20 +1,49 @@
 @model IEnumerable<ProyectoSistemaInventarioNuevo.ViewModels.CompraAgrupadaViewModel>
 
 @{
-    ViewData["Title"] = "Historial de Compras (Agrupado)";
+    ViewData["Title"] = "Historial de Compras";
 }
 
 <h1>Historial de Compras</h1>
 
+<div class="card mb-4 p-3 shadow-sm bg-light">
+    <form asp-action="Index" method="get" class="row g-2 align-items-end">
+        
+        <div class="col-md-2">
+            <label class="form-label fw-bold small">Desde</label>
+            <input type="date" name="fechaInicio" class="form-control form-control-sm" value="@Context.Request.Query["fechaInicio"]" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold small">Hasta</label>
+            <input type="date" name="fechaFin" class="form-control form-control-sm" value="@Context.Request.Query["fechaFin"]" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fw-bold small">Proveedor</label>
+            <select name="idProveedor" class="form-select form-select-sm" asp-items="ViewBag.Proveedores">
+                <option value="">-- Todos los Proveedores --</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fw-bold small">Producto</label>
+            <select name="idProducto" class="form-select form-select-sm" asp-items="ViewBag.Productos">
+                <option value="">-- Buscar Producto --</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-grid gap-1">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Buscar</button>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+        </div>
+    </form>
+</div>
+
 <p>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Nueva Compra
+    <a asp-action="Create" class="btn btn-success">
+        <i class="bi bi-cart-plus"></i> Registrar Nueva Compra
     </a>
 </p>
-
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Los registros se han agrupado automáticamente por <strong>Fecha</strong> y <strong>Proveedor</strong>.
-</div>
 
 <div class="accordion" id="accordionCompras">
     @foreach (var compra in Model.Select((value, index) => new { value, index }))

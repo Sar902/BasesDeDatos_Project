@@ -28,23 +28,28 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // Carga de dropdowns (solo Categoría porque Producto no tiene Proveedor)
         private async Task PopulateDropdowns(Producto producto = null)
         {
-            // Si no se pasa producto, carga el dropdown sin selección
+            // Carga solo las categorías ACTIVAS para la lista desplegable
+            var categoriasQuery = _context.Categoria.AsNoTracking();
+
             if (producto == null)
             {
-                ViewData["IdCategoria"] = new SelectList(
-                    await _context.Categoria.AsNoTracking().ToListAsync(),
-                    "IdCategoria", "Nombre"
-                );
+                // Al crear, solo mostramos las activas
+                categoriasQuery = categoriasQuery.Where(c => c.Estado == "Activo");
             }
             else
             {
-                // Si se pasa producto, carga el dropdown seleccionando su categoría
-                ViewData["IdCategoria"] = new SelectList(
-                    await _context.Categoria.AsNoTracking().ToListAsync(),
-                    "IdCategoria", "Nombre",
-                    producto.IdCategoria
-                );
+                // Al editar, debemos incluir la categoría actual del producto 
+                // aunque esté inactiva (para que no se pierda la selección), 
+                // o simplemente permitir activas si la lógica de negocio lo dicta.
+                // Lo más simple suele ser:
+                categoriasQuery = categoriasQuery.Where(c => c.Estado == "Activo" || c.IdCategoria == producto.IdCategoria);
             }
+
+            ViewData["IdCategoria"] = new SelectList(
+                await categoriasQuery.OrderBy(c => c.Nombre).ToListAsync(),
+                "IdCategoria", "Nombre",
+                producto?.IdCategoria
+            );
         }
 
         // Carga un diccionario de categorías para mostrar nombre en lugar de ID
@@ -65,18 +70,53 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             return View();
         }
 
-        // Devuelve la lista parcial de productos para HTMX
+
+        // Modificamos este método para aceptar los parámetros de filtros
         [HttpGet]
-        public async Task<IActionResult> GetProductoList()
+        public async Task<IActionResult> GetProductoList(string searchString, string sortOrder, string statusFilter)
         {
             // Carga el mapa de categorías para mostrar sus nombres
             await LoadCategoriasMap();
 
-            // Obtiene la lista desde la vista SQL VProducto
-            var vProductos = await _context.VProducto
-                .AsNoTracking()
-                .OrderBy(p => p.Nombre)
-                .ToListAsync();
+            // 1. Empezamos con la consulta base sobre la vista VProducto
+            var query = _context.VProducto.AsNoTracking().AsQueryable();
+
+            // 2. Filtro por Búsqueda (Nombre)
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                // Buscamos ignorando mayúsculas/minúsculas
+                query = query.Where(p => p.Nombre.Contains(searchString));
+            }
+
+            // 3. Filtro por Estado (Activo/Inactivo)
+            if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "Todos")
+            {
+                query = query.Where(p => p.Estado == statusFilter);
+            }
+
+            // 4. Ordenamiento (Precio y Stock)
+            switch (sortOrder)
+            {
+                case "precio_desc":
+                    // Asumiendo que VProducto tiene PrecioVenta. Si se llama distinto, cámbialo aquí.
+                    query = query.OrderByDescending(p => p.PrecioVenta); 
+                    break;
+                case "precio_asc":
+                    query = query.OrderBy(p => p.PrecioVenta);
+                    break;
+                case "stock_desc":
+                    query = query.OrderByDescending(p => p.Cantidad);
+                    break;
+                case "stock_asc":
+                    query = query.OrderBy(p => p.Cantidad);
+                    break;
+                default:
+                    // Por defecto ordenamos por nombre
+                    query = query.OrderBy(p => p.Nombre);
+                    break;
+            }
+
+            var vProductos = await query.ToListAsync();
 
             return PartialView("_ProductoList", vProductos);
         }

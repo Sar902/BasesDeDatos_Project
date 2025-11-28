@@ -37,12 +37,25 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         // HTMX recarga esta sección cada vez que ocurre un cambio.
         // ---------------------------------------------------------
         [HttpGet]
-        public async Task<IActionResult> GetCategoriaList()
+        public async Task<IActionResult> GetCategoriaList(string searchString, string statusFilter)
         {
-            var categorias = await _context.Categoria
-                                           .OrderBy(c => c.Nombre)
-                                           .AsNoTracking()
-                                           .ToListAsync();
+            var query = _context.Categoria.AsNoTracking().AsQueryable();
+
+            // Filtro de búsqueda
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(c => c.Nombre.Contains(searchString));
+            }
+
+            // Filtro de estado (por defecto Activo si viene nulo)
+            if (string.IsNullOrEmpty(statusFilter)) statusFilter = "Activo";
+            
+            if (statusFilter != "Todos")
+            {
+                query = query.Where(c => c.Estado == statusFilter);
+            }
+
+            var categorias = await query.OrderBy(c => c.Nombre).ToListAsync();
 
             return PartialView("_CategoriaList", categorias);
         }
@@ -57,12 +70,12 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
             if (id == null) return NotFound();
 
             var categoria = await _context.Categoria
-                                          .AsNoTracking()
-                                          .FirstOrDefaultAsync(c => c.IdCategoria == id);
+                                        .Include(c => c.Producto) // <--- AGREGAR ESTA LÍNEA
+                                        .AsNoTracking()
+                                        .FirstOrDefaultAsync(c => c.IdCategoria == id);
 
             if (categoria == null) return NotFound();
 
-            // Si viene desde HTMX, lo cargamos dentro del modal
             if (IsHtmxRequest())
             {
                 return PartialView("Details", categoria);
@@ -253,6 +266,14 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         private bool CategoriaExists(int id)
         {
             return _context.Categoria.Any(c => c.IdCategoria == id);
+        }
+
+        // GET: Devuelve el conteo de categorías activas para el dashboard
+        [HttpGet]
+        public async Task<IActionResult> GetCategoriaCount()
+        {
+            var count = await _context.Categoria.CountAsync(c => c.Estado == "Activo");
+            return Content(count.ToString(), "text/plain");
         }
     }
 }

@@ -1,42 +1,92 @@
 @{
-    ViewData["Title"] = "Categorías";
+    ViewData["Title"] = "Gestión de Categorías";
 }
 
-<h1>Listado de Categorías</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark"><i class="bi bi-tags-fill text-warning me-2"></i>Categorías</h1>
+        <p class="text-muted mb-0">Organice sus productos en familias o grupos.</p>
+    </div>
+    
+    <div class="bg-white p-2 rounded shadow-sm border text-center" style="min-width: 150px;">
+        <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem;">Activas</small>
+        <span class="fs-4 fw-bold text-success"
+              hx-get="@Url.Action("GetCategoriaCount")"
+              hx-trigger="load, refreshCategoriaList from:body"
+              hx-swap="innerHTML">
+            ...
+        </span>
+    </div>
+</div>
 
-<p>
-    <!-- 
-      Este botón ahora usa HTMX para cargar el formulario "Create"
-      dentro del contenedor del modal genérico que definimos en _Layout.
-    -->
-    <button class="btn btn-primary"
-            hx-get="@Url.Action("Create")"
-            hx-target="#modal-content-generic"
-            hx-swap="innerHTML">
-        <i class="bi bi-plus-circle"></i> Agregar nueva categoría
-    </button>
-</p>
+<div class="card mb-4 shadow-sm border-0 bg-light">
+    <div class="card-body py-3">
+        <div class="row g-3 align-items-center">
+            
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100 shadow-sm"
+                        hx-get="@Url.Action("Create")"
+                        hx-target="#modal-content-generic"
+                        hx-swap="innerHTML">
+                    <i class="bi bi-plus-lg me-1"></i> Nueva Categoría
+                </button>
+            </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Porcentaje de Ganancia</th>
-            <th>Estado</th>
-            <th></th>
-        </tr>
-    </thead>
-    <!--
-      Este <tbody> se cargará inicialmente Y se refrescará
-      cada vez que escuche el evento "refreshCategoriaList"
-      que disparamos desde el controlador.
-    -->
-    <tbody id="categoria-tbody"
-           hx-get="@Url.Action("GetCategoriaList")"
-           hx-trigger="load, refreshCategoriaList from:body"
-           hx-swap="innerHTML">
-           
-           <!-- Aquí se mostrará un indicador de carga -->
-           <tr><td colspan="4">Cargando...</td></tr>
-    </tbody>
-</table>
+            <div class="col-md-6">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" 
+                           class="form-control border-start-0 ps-0 filter-input" 
+                           name="searchString" 
+                           placeholder="Buscar categoría..."
+                           hx-get="@Url.Action("GetCategoriaList")"
+                           hx-target="#categoria-tbody"
+                           hx-trigger="keyup changed delay:500ms" 
+                           hx-include=".filter-input"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white text-muted"><i class="bi bi-funnel"></i></span>
+                    <select class="form-select border-start-0 filter-input" 
+                            name="statusFilter"
+                            hx-get="@Url.Action("GetCategoriaList")"
+                            hx-target="#categoria-tbody"
+                            hx-trigger="change"
+                            hx-include=".filter-input">
+                        <option value="Activo" selected>Ver Activas</option>
+                        <option value="Inactivo">Ver Inactivas</option>
+                        <option value="Todos">Ver Todas</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase text-secondary small fw-bold">Nombre</th>
+                        <th class="text-center text-uppercase text-secondary small fw-bold">Margen (%)</th>
+                        <th class="text-uppercase text-secondary small fw-bold">Estado</th>
+                        <th class="text-end pe-4 text-uppercase text-secondary small fw-bold">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="categoria-tbody"
+                       hx-get="@Url.Action("GetCategoriaList")"
+                       hx-trigger="load, refreshCategoriaList from:body"
+                       hx-include=".filter-input"
+                       hx-swap="innerHTML">
+                       
+                       <tr><td colspan="4" class="text-center py-5">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
