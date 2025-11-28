@@ -49,14 +49,19 @@
                         <th>Stock disponible</th> 
                     </tr> 
                 </thead>
-                <tbody> 
+               <tbody> 
                     @if (ViewBag.InventarioBajo != null)
                     {
                         foreach (var item in ViewBag.InventarioBajo)
                         { 
-                            <tr class="@((item.CantidadDisponible < 5) ? "table-danger" : "")"> 
-                                <td class="ps-4 fw-bold">@item.IdProductoNavigation.Nombre</td> 
-                                <td>@item.CantidadDisponible</td> 
+                            @* CORRECCIÓN: Usar 'Cantidad' en lugar de 'CantidadDisponible' *@
+                            <tr class="@((item.Cantidad < 10) ? "table-danger" : "")"> 
+                                
+                                @* CORRECCIÓN: Usar 'Nombre' directo, ya que 'item' ahora es un Producto *@
+                                <td class="ps-4 fw-bold">@item.Nombre</td> 
+                                
+                                @* CORRECCIÓN: Mostrar el stock total global *@
+                                <td>@item.Cantidad</td> 
                             </tr> 
                         }
                     }

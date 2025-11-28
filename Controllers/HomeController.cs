@@ -28,12 +28,13 @@ namespace ProyectoSistemaInventarioNuevo.Controllers
         .ToListAsync();
 
     // Productos con inventario bajo
-   var inventarioBajo = await _context.Inventario
-    .Include(i => i.IdProductoNavigation)
-    .Where(i => i.CantidadDisponible < 10
-                && i.IdProductoNavigation != null
-                && i.IdProductoNavigation.Estado == "Activo")
-    .ToListAsync();
+    // Corrección: Consultar la tabla Producto directamente
+    // Ya que 'RecalculateMasterStock' mantiene el campo 'Cantidad' actualizado con la suma total.
+    var inventarioBajo = await _context.Producto
+        .Include(p => p.IdCategoriaNavigation) // Opcional, si necesitas mostrar la categoría
+        .Where(p => p.Cantidad < 10 
+                && p.Estado == "Activo")
+        .ToListAsync();
 
     // Ventas del mes
     var ventasMes = await _context.Venta
